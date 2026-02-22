@@ -1,0 +1,36 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  build:
+    name: Build Application
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Display .NET Info
+        run: dotnet --info
+
+      - name: Restore
+        run: dotnet restore DeformationSystem/DeformationSystem.slnx
+
+      - name: Build (Release)
+        run: dotnet build DeformationSystem/DeformationSystem.slnx `
+             --configuration Release `
+             --no-restore
