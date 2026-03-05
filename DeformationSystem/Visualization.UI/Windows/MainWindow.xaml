@@ -1,0 +1,32 @@
+﻿<Window
+    x:Class="Visualization.UI.Windows.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Visualization.UI.Controls"
+    Title="3D Deformation System"
+    Width="1200"
+    Height="800"
+    Icon="../Resources/Icons/app.ico">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="280"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <StackPanel Grid.Column="0"
+                    Background="{StaticResource PanelBrush}"
+                    Margin="5">
+            <Button Content="Load Object"/>
+            <controls:ParameterPanel/>
+            <Button Content="Apply Deformation"/>
+            <Separator Margin="10"/>
+            <Button Content="About"/>
+        </StackPanel>
+
+        <Border Grid.Column="1"
+                Margin="5"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="1">
+            <Grid x:Name="ViewportHost"/>
+        </Border>
+    </Grid>
+</Window>
