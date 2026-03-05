@@ -1,1 +1,6 @@
-<Solution />
+<Solution>
+  <Project Path="Logging/Logging.csproj" Id="7907cf3c-38ae-4405-9dac-f74a55782b2e" />
+  <Project Path="Shell/Shell.csproj" />
+  <Project Path="Visualization.Rendering/Visualization.Rendering.csproj" />
+  <Project Path="Visualization.UI/Visualization.UI.csproj" Id="33d7f980-fedd-4b6e-81b4-806d15a76a1d" />
+</Solution>
