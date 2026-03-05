@@ -1,11 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-	<UseWPF>true</UseWPF>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net10.0-windows</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<UseWPF>true</UseWPF>
+		<Nullable>enable</Nullable>
+		<ApplicationIcon>..\Visualization.UI\Resources\Icons\app.ico</ApplicationIcon>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Logging\Logging.csproj" />
+		<ProjectReference Include="..\Visualization.UI\Visualization.UI.csproj" />
+	</ItemGroup>
 
 </Project>
