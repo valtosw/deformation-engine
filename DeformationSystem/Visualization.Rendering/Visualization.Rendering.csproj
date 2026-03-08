@@ -11,4 +11,21 @@
     <PackageReference Include="OpenTK.GLWpfControl" Version="4.3.4" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Visualization.Rendering.Abstractions\Visualization.Rendering.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Shaders\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Shaders\default.frag">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Shaders\default.vert">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
