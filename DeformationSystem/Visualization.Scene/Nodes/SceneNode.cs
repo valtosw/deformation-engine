@@ -1,6 +1,7 @@
 ﻿using OpenTK.Mathematics;
 using Visualization.Abstractions.Extensions;
 using Visualization.Abstractions.Geometry;
+using Visualization.Rendering.Abstractions;
 
 namespace Visualization.Scene.Nodes
 {
@@ -16,6 +17,8 @@ namespace Visualization.Scene.Nodes
         private Matrix4? _cachedLocalTransform;
         private Matrix4? _cachedWorldTransform;
         private AxisAlignedBoundingBox? _cachedBoundingBox;
+
+        public IReadOnlyCollection<SceneNode> Children => _children;
 
         public SceneNode? Parent
         {
@@ -73,7 +76,7 @@ namespace Visualization.Scene.Nodes
         {
             get
             {
-                _cachedWorldTransform ??= (Parent?.WorldTransform * LocalTransform) ?? LocalTransform;
+                _cachedWorldTransform ??= (LocalTransform * Parent?.WorldTransform) ?? LocalTransform;
                 return _cachedWorldTransform.Value;
             }
         }
@@ -105,6 +108,14 @@ namespace Visualization.Scene.Nodes
         {
             if (_children.Remove(child))
                 child.Parent = null;
+        }
+
+        public virtual void OnRendering(IRenderingContext renderingContext)
+        {
+            renderingContext.SetMatrix("model", WorldTransform);
+
+            foreach (var child in _children)
+                child.OnRendering(renderingContext);
         }
 
         protected virtual IEnumerable<Vector3> EnumerateLocalPoints() => [];

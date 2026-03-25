@@ -17,7 +17,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Visualization.Rendering\Visualization.Rendering.csproj" />
+	  <ProjectReference Include="..\Visualization.Interaction\Visualization.Interaction.csproj" />
+	  <ProjectReference Include="..\Visualization.Rendering\Visualization.Rendering.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

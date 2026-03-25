@@ -2,6 +2,8 @@
   <Project Path="Logging/Logging.csproj" Id="7907cf3c-38ae-4405-9dac-f74a55782b2e" />
   <Project Path="Shell/Shell.csproj" />
   <Project Path="Visualization.Abstractions/Visualization.Abstractions.csproj" Id="dad45364-ef6c-4ad2-b799-f5f2a507b767" />
+  <Project Path="Visualization.Interaction/Visualization.Interaction.csproj" Id="48b70dfb-64b3-4e26-b4c4-3d9adb6e8479" />
+  <Project Path="Visualization.Rendering.Abstractions/Visualization.Rendering.Abstractions.csproj" Id="0c3c7c5c-9c71-4a8d-baf6-6ca120529930" />
   <Project Path="Visualization.Rendering/Visualization.Rendering.csproj" />
   <Project Path="Visualization.Scene/Visualization.Scene.csproj" Id="9b11c728-49db-453b-af4c-35eb4dc10e50" />
   <Project Path="Visualization.UI/Visualization.UI.csproj" Id="33d7f980-fedd-4b6e-81b4-806d15a76a1d" />

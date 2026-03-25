@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Visualization.Rendering.Abstractions\Visualization.Rendering.Abstractions.csproj" />
+    <ProjectReference Include="..\Visualization.Scene\Visualization.Scene.csproj" />
   </ItemGroup>
 
 </Project>
