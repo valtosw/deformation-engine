@@ -76,7 +76,7 @@ namespace Visualization.Scene.Nodes
         {
             get
             {
-                _cachedWorldTransform ??= (Parent?.WorldTransform * LocalTransform) ?? LocalTransform;
+                _cachedWorldTransform ??= (LocalTransform * Parent?.WorldTransform) ?? LocalTransform;
                 return _cachedWorldTransform.Value;
             }
         }

@@ -2,6 +2,7 @@
 using Visualization.Interaction.Input;
 using Visualization.Rendering.Abstractions;
 using Visualization.Scene;
+using Visualization.Scene.Camera;
 using Visualization.Scene.Nodes;
 
 namespace Visualization.Interaction
@@ -30,14 +31,12 @@ namespace Visualization.Interaction
                     break;
 
                 case MouseMoveEvent moveEvent when isRightPressed:
-                    var delta = moveEvent.Position - _lastMousePosition;
-                    _cameraSystem.Orbit(delta * 0.005f);
+                    _cameraSystem.Orbit(_lastMousePosition, moveEvent.Position);
                     _lastMousePosition = moveEvent.Position;
                     break;
 
                 case MouseMoveEvent moveEvent when isMiddlePressed:
-                    var panDelta = moveEvent.Position - _lastMousePosition;
-                    _cameraSystem.Pan(panDelta * 0.01f);
+                    _cameraSystem.Pan(_lastMousePosition, moveEvent.Position);
                     _lastMousePosition = moveEvent.Position;
                     break;
 
@@ -55,8 +54,8 @@ namespace Visualization.Interaction
             _sceneRenderer.Render(_rootNode, _renderingContext, _cameraSystem.ViewMatrix, _cameraSystem.ProjectionMatrix);
         }
 
-        public void Orbit(Vector2 delta) => _cameraSystem.Orbit(delta);
-        public void Pan(Vector2 delta) => _cameraSystem.Pan(delta);
+        public void Orbit(Vector2 oldPosition, Vector2 newPosition) => _cameraSystem.Orbit(oldPosition, newPosition);
+        public void Pan(Vector2 oldPosition, Vector2 newPosition) => _cameraSystem.Pan(oldPosition, newPosition);
         public void Zoom(float delta) => _cameraSystem.Zoom(delta);
     }
 }
