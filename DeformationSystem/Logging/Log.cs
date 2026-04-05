@@ -6,6 +6,9 @@ namespace Logging
     {
         private static readonly ILoggerFactory Factory = LoggingFactory.Create();
 
-        public static ILogger Create<T>() => Factory.CreateLogger<T>();
+        public static ILogger Create<T>()
+        {
+            return Factory.CreateLogger<T>();
+        }
     }
 }

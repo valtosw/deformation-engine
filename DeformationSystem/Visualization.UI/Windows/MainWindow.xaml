@@ -33,6 +33,7 @@
                                  SizeChanged="GlRenderingControl_OnSizeChanged"
                                  MouseMove="GlRenderingControl_OnMouseMove"
                                  MouseDown="GlRenderingControl_OnMouseDown"
+                                 MouseUp="GlRenderingControl_OnMouseUp"
                                  MouseWheel="GlRenderingControl_OnMouseWheel"/>
         </Border>
     </Grid>

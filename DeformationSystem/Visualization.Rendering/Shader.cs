@@ -28,9 +28,15 @@ namespace Visualization.Rendering
             GL.DeleteShader(fragmentShader);
         }
 
-        public void Dispose() => GL.DeleteProgram(_handle);
+        public void Dispose()
+        {
+            GL.DeleteProgram(_handle);
+        }
 
-        public void Use() => GL.UseProgram(_handle);
+        public void Use()
+        {
+            GL.UseProgram(_handle);
+        }
 
         public void SetMatrix4(string name, Matrix4 matrix)
         {

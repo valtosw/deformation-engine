@@ -1,6 +1,6 @@
 ﻿using OpenTK.Mathematics;
 
-namespace Visualization.Scene.Camera
+namespace Visualization.Scene.Abstractions
 {
     public abstract class Camera(float nearClipPlane, float farClipPlane)
     {

@@ -18,8 +18,15 @@ namespace Visualization.Rendering
             shader.Use();
         }
 
-        public void SetMatrix(string name, Matrix4 matrix) => shader.SetMatrix4(name, matrix);
-        public void SetVector(string name, Vector3 vector) => shader.SetVector3(name, vector);
+        public void SetMatrix(string name, Matrix4 matrix)
+        {
+            shader.SetMatrix4(name, matrix);
+        }
+
+        public void SetVector(string name, Vector3 vector)
+        {
+            shader.SetVector3(name, vector);
+        }
 
         public int CreateBuffer(Mesh mesh)
         {
@@ -39,8 +46,14 @@ namespace Visualization.Rendering
             _buffers.Remove(bufferId);
         }
 
-        public void DrawBuffer(int bufferId) => _buffers[bufferId].Draw();
+        public void DrawBuffer(int bufferId)
+        {
+            _buffers[bufferId].Draw();
+        }
 
-        public void UpdateBuffer(int bufferId, Mesh mesh) => _buffers[bufferId].Update(mesh);
+        public void UpdateBuffer(int bufferId, Mesh mesh)
+        {
+            _buffers[bufferId].Update(mesh);
+        }
     }
 }

@@ -1,0 +1,103 @@
+﻿using System;
+using System.IO;
+using OpenTK.Mathematics;
+using Visualization.Abstractions.Geometry;
+using Visualization.Interaction;
+using Visualization.Interaction.Input;
+using Visualization.Rendering;
+using Visualization.Scene;
+using Visualization.Scene.Abstractions;
+using Visualization.Scene.Nodes;
+
+namespace Visualization.UI.ViewModels
+{
+    public sealed class MainViewModel
+    {
+        public MainViewModel()
+        {
+            Camera = new CameraSystem();
+            Engine = new VisualizationEngine(new SceneRenderer());
+
+            Engine.RegisterController(new CameraController(Camera));
+        }
+
+        public VisualizationEngine Engine { get; }
+        public ICameraSystem Camera { get; }
+
+        public void InitializeRendering()
+        {
+            var shadersDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Shaders");
+            var shader = new Shader(
+                Path.Combine(shadersDirectory, "default.vert"),
+                Path.Combine(shadersDirectory, "default.frag"));
+
+            var renderingContext = new GlRenderingContext(shader);
+            Engine.Initialize(renderingContext);
+
+            CreateTestScene();
+        }
+
+        public void Resize(int width, int height)
+        {
+            Camera.SetViewport(width, height);
+        }
+
+        public void Render(float deltaTime)
+        {
+            Engine.UpdateAndRender(deltaTime, Camera.ViewMatrix, Camera.ProjectionMatrix);
+        }
+
+        public void ProcessInput(InputEvent inputEvent)
+        {
+            Engine.ProcessInput(inputEvent);
+        }
+
+        private void CreateTestScene()
+        {
+            var mesh = new Mesh(
+            [
+                // Front face
+                new Vertex(new Vector3(-0.5f, -0.5f,  0.5f), new Vector3(0, 0, 1)),
+                new Vertex(new Vector3( 0.5f, -0.5f,  0.5f), new Vector3(0, 0, 1)),
+                new Vertex(new Vector3( 0.5f,  0.5f,  0.5f), new Vector3(0, 0, 1)),
+                new Vertex(new Vector3(-0.5f,  0.5f,  0.5f), new Vector3(0, 0, 1)),
+                // Back face
+                new Vertex(new Vector3( 0.5f, -0.5f, -0.5f), new Vector3(0, 0, -1)),
+                new Vertex(new Vector3(-0.5f, -0.5f, -0.5f), new Vector3(0, 0, -1)),
+                new Vertex(new Vector3(-0.5f,  0.5f, -0.5f), new Vector3(0, 0, -1)),
+                new Vertex(new Vector3( 0.5f,  0.5f, -0.5f), new Vector3(0, 0, -1)),
+                // Top face
+                new Vertex(new Vector3(-0.5f,  0.5f,  0.5f), new Vector3(0, 1, 0)),
+                new Vertex(new Vector3( 0.5f,  0.5f,  0.5f), new Vector3(0, 1, 0)),
+                new Vertex(new Vector3( 0.5f,  0.5f, -0.5f), new Vector3(0, 1, 0)),
+                new Vertex(new Vector3(-0.5f,  0.5f, -0.5f), new Vector3(0, 1, 0)),
+                // Bottom face
+                new Vertex(new Vector3(-0.5f, -0.5f, -0.5f), new Vector3(0, -1, 0)),
+                new Vertex(new Vector3( 0.5f, -0.5f, -0.5f), new Vector3(0, -1, 0)),
+                new Vertex(new Vector3( 0.5f, -0.5f,  0.5f), new Vector3(0, -1, 0)),
+                new Vertex(new Vector3(-0.5f, -0.5f,  0.5f), new Vector3(0, -1, 0)),
+                // Right face
+                new Vertex(new Vector3( 0.5f, -0.5f,  0.5f), new Vector3(1, 0, 0)),
+                new Vertex(new Vector3( 0.5f, -0.5f, -0.5f), new Vector3(1, 0, 0)),
+                new Vertex(new Vector3( 0.5f,  0.5f, -0.5f), new Vector3(1, 0, 0)),
+                new Vertex(new Vector3( 0.5f,  0.5f,  0.5f), new Vector3(1, 0, 0)),
+                // Left face
+                new Vertex(new Vector3(-0.5f, -0.5f, -0.5f), new Vector3(-1, 0, 0)),
+                new Vertex(new Vector3(-0.5f, -0.5f,  0.5f), new Vector3(-1, 0, 0)),
+                new Vertex(new Vector3(-0.5f,  0.5f,  0.5f), new Vector3(-1, 0, 0)),
+                new Vertex(new Vector3(-0.5f,  0.5f, -0.5f), new Vector3(-1, 0, 0)),
+            ],
+            [
+                 0,  1,  2,   2,  3,  0, // Front
+                 4,  5,  6,   6,  7,  4, // Back
+                 8,  9, 10,  10, 11,  8, // Top
+                12, 13, 14,  14, 15, 12, // Bottom
+                16, 17, 18,  18, 19, 16, // Right
+                20, 21, 22,  22, 23, 20, // Left
+            ]);
+
+            var cubeNode = new MeshNode { Mesh = mesh };
+            Engine.RootNode.AddChild(cubeNode);
+        }
+    }
+}

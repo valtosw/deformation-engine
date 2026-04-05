@@ -1,17 +1,9 @@
 ﻿namespace Visualization.Abstractions.Geometry
 {
-    public sealed class Mesh
+    public sealed class Mesh(Vertex[] vertices, uint[] indices)
     {
-        public Mesh() {}
-
-        public Mesh(Vertex[] vertices, uint[] indices)
-        {
-            Vertices = vertices;
-            Indices = indices;
-        }
-
-        public Vertex[] Vertices { get; set; } = [];
-        public uint[] Indices { get; set; } = [];
+        public Vertex[] Vertices { get; set; } = vertices;
+        public uint[] Indices { get; set; } = indices;
 
         public static Mesh FromTriangles(List<Triangle> triangles)
         {

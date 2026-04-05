@@ -7,9 +7,9 @@ using Visualization.Scene.Constants;
 using Visualization.Scene.Enums;
 using Visualization.Scene.Nodes;
 
-namespace Visualization.Scene.Camera
+namespace Visualization.Scene.Abstractions
 {
-    public sealed class CameraSystem
+    public sealed class CameraSystem : ICameraSystem
     {
         private readonly SceneNode _targetNode = new();
         private readonly SceneNode _viewNode = new();
