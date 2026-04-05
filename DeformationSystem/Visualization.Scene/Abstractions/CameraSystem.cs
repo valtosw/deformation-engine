@@ -121,7 +121,8 @@ namespace Visualization.Scene.Abstractions
                 ViewPreset.Right     => Quaternion.FromEulerAngles(0, MathHelper.PiOver2, 0),
                 ViewPreset.Top       => Quaternion.FromEulerAngles(-MathHelper.PiOver2, 0, 0),
                 ViewPreset.Bottom    => Quaternion.FromEulerAngles(MathHelper.PiOver2, 0, 0),
-                ViewPreset.Isometric => Quaternion.FromEulerAngles(MathF.Atan(-1f / MathF.Sqrt(2f)), MathHelper.PiOver4, 0),
+                ViewPreset.Isometric => Quaternion.FromAxisAngle(Vector3.UnitY, MathHelper.PiOver4) *
+                                        Quaternion.FromAxisAngle(Vector3.UnitX, MathF.Atan(-1f / MathF.Sqrt(2f))),
                 _                    => _targetNode.Rotation
             };
 
