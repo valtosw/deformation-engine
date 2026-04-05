@@ -1,6 +1,6 @@
 ﻿using OpenTK.Mathematics;
 
-namespace Visualization.Scene.Camera
+namespace Visualization.Scene.Abstractions
 {
     public sealed class PerspectiveProjectionCamera(float fovDegrees, float nearClipPlane, float farClipPlane)
         : Camera(nearClipPlane, farClipPlane)
@@ -8,6 +8,8 @@ namespace Visualization.Scene.Camera
         public float FieldOfView { get; set; } = fovDegrees;
 
         public override Matrix4 GetProjectionMatrix(float aspectRatio)
-            => Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(FieldOfView), aspectRatio, NearClipPlane, FarClipPlane);
+        {
+            return Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(FieldOfView), aspectRatio, NearClipPlane, FarClipPlane);
+        }
     }
 }

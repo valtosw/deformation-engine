@@ -7,9 +7,9 @@ using Visualization.Scene.Constants;
 using Visualization.Scene.Enums;
 using Visualization.Scene.Nodes;
 
-namespace Visualization.Scene.Camera
+namespace Visualization.Scene.Abstractions
 {
-    public sealed class CameraSystem
+    public sealed class CameraSystem : ICameraSystem
     {
         private readonly SceneNode _targetNode = new();
         private readonly SceneNode _viewNode = new();
@@ -18,6 +18,7 @@ namespace Visualization.Scene.Camera
         private readonly OrthographicProjectionCamera _orthographicCamera;
 
         private BoundingSphere _targetSphere = new(Vector3.Zero, 1f);
+        private BoundingSphere _baseTargetSphere = new(Vector3.Zero, 1f);
         private float _aspectRatio = 1f;
         private int _viewportWidth = 1;
         private int _viewportHeight = 1;
@@ -25,13 +26,13 @@ namespace Visualization.Scene.Camera
         public CameraSystem()
         {
             _perspectiveCamera = new PerspectiveProjectionCamera(
-                fovDegrees: CameraSystemConstants.DefaultParameters.DefaultPerspectiveFieldOfView, 
-                nearClipPlane: CameraSystemConstants.DefaultParameters.DefaultNearClipPlane, 
+                fovDegrees: CameraSystemConstants.DefaultParameters.DefaultPerspectiveFieldOfView,
+                nearClipPlane: CameraSystemConstants.DefaultParameters.DefaultNearClipPlane,
                 farClipPlane: CameraSystemConstants.DefaultParameters.DefaultFarClipPlane);
 
             _orthographicCamera = new OrthographicProjectionCamera(
-                verticalHeight: CameraSystemConstants.DefaultParameters.DefaultOrthographicVerticalHeight, 
-                nearClipPlane: CameraSystemConstants.DefaultParameters.DefaultNearClipPlane, 
+                verticalHeight: CameraSystemConstants.DefaultParameters.DefaultOrthographicVerticalHeight,
+                nearClipPlane: CameraSystemConstants.DefaultParameters.DefaultNearClipPlane,
                 farClipPlane: CameraSystemConstants.DefaultParameters.DefaultFarClipPlane);
 
             _targetNode.AddChild(_viewNode);
@@ -43,10 +44,11 @@ namespace Visualization.Scene.Camera
         public BoundingSphere TargetSphere
         {
             get => _targetSphere;
-            set 
-            { 
-                _targetSphere = value; 
-                UpdateCamera(); 
+            set
+            {
+                _baseTargetSphere = value;
+                _targetSphere = value;
+                UpdateCamera();
             }
         }
 
@@ -95,11 +97,18 @@ namespace Visualization.Scene.Camera
         public void Zoom(float delta)
         {
             var scale = MathF.Pow(1.1f, MathF.Abs(delta * 0.01f));
-            var newRadius = delta > 0 
-                ? _targetSphere.Radius / scale 
+            var newRadius = delta > 0
+                ? _targetSphere.Radius / scale
                 : _targetSphere.Radius * scale;
 
-            TargetSphere = _targetSphere with { Radius = newRadius };
+            _targetSphere = _targetSphere with { Radius = newRadius };
+            UpdateCamera();
+        }
+
+        public void ZoomToFit()
+        {
+            _targetSphere = _baseTargetSphere;
+            UpdateCamera();
         }
 
         public void SetViewPreset(ViewPreset viewPreset)
@@ -112,7 +121,8 @@ namespace Visualization.Scene.Camera
                 ViewPreset.Right     => Quaternion.FromEulerAngles(0, MathHelper.PiOver2, 0),
                 ViewPreset.Top       => Quaternion.FromEulerAngles(-MathHelper.PiOver2, 0, 0),
                 ViewPreset.Bottom    => Quaternion.FromEulerAngles(MathHelper.PiOver2, 0, 0),
-                ViewPreset.Isometric => Quaternion.FromEulerAngles(MathF.Atan(-1f / MathF.Sqrt(2f)), MathHelper.PiOver4, 0),
+                ViewPreset.Isometric => Quaternion.FromAxisAngle(Vector3.UnitY, MathHelper.PiOver4) *
+                                        Quaternion.FromAxisAngle(Vector3.UnitX, MathF.Atan(-1f / MathF.Sqrt(2f))),
                 _                    => _targetNode.Rotation
             };
 
@@ -142,7 +152,7 @@ namespace Visualization.Scene.Camera
             var planeNormal = _viewNode.WorldTransform.TransformDirection(Vector3.UnitZ).Normalized();
             var denominator = Vector3.Dot(planeNormal, ray.Direction);
 
-            if (MathF.Abs(denominator) < MathConstants.ZeroTolerance) 
+            if (MathF.Abs(denominator) < MathConstants.ZeroTolerance)
                 return null;
 
             var parameter = Vector3.Dot(_targetSphere.Center - ray.Origin, planeNormal) / denominator;
@@ -168,8 +178,8 @@ namespace Visualization.Scene.Camera
             var y = 1f - 2f * mousePosition.Y / _viewportHeight;
             var lengthSquared = x * x + y * y;
 
-            return lengthSquared > 1f 
-                ? new Vector3(x, y, 0).Normalized() 
+            return lengthSquared > 1f
+                ? new Vector3(x, y, 0).Normalized()
                 : new Vector3(x, y, MathF.Sqrt(1f - lengthSquared)).Normalized();
         }
     }

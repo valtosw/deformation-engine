@@ -7,7 +7,8 @@
     Title="3D Deformation System"
     Width="1200"
     Height="800"
-    Icon="../Resources/Icons/app.ico">
+    Icon="../Resources/Icons/app.ico"
+    KeyDown="Window_OnKeyDown">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="280"/>
@@ -33,6 +34,7 @@
                                  SizeChanged="GlRenderingControl_OnSizeChanged"
                                  MouseMove="GlRenderingControl_OnMouseMove"
                                  MouseDown="GlRenderingControl_OnMouseDown"
+                                 MouseUp="GlRenderingControl_OnMouseUp"
                                  MouseWheel="GlRenderingControl_OnMouseWheel"/>
         </Border>
     </Grid>

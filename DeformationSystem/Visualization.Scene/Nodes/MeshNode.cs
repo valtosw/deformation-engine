@@ -46,7 +46,10 @@ namespace Visualization.Scene.Nodes
             base.OnRendering(renderingContext);
         }
 
-        public void NotifyGeometryChanged() => _isBufferDirty = true;
+        public void NotifyGeometryChanged()
+        {
+            _isBufferDirty = true;
+        }
 
         protected override IEnumerable<Vector3> EnumerateLocalPoints()
         {

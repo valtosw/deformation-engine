@@ -1,6 +1,6 @@
 ﻿using OpenTK.Mathematics;
 
-namespace Visualization.Scene.Camera
+namespace Visualization.Scene.Abstractions
 {
     public sealed class OrthographicProjectionCamera(float verticalHeight, float nearClipPlane, float farClipPlane)
         : Camera(nearClipPlane, farClipPlane)

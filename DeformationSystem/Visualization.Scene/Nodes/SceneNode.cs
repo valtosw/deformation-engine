@@ -118,7 +118,10 @@ namespace Visualization.Scene.Nodes
                 child.OnRendering(renderingContext);
         }
 
-        protected virtual IEnumerable<Vector3> EnumerateLocalPoints() => [];
+        protected virtual IEnumerable<Vector3> EnumerateLocalPoints()
+        {
+            return [];
+        }
 
         private protected void InvalidateBoundingBox()
         {
