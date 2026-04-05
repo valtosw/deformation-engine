@@ -87,7 +87,7 @@ namespace Visualization.UI.Windows
         {
             var key = e.Key.ToEngineKey();
 
-            if (key is not Key.Unknown)
+            if (key != Key.Unknown)
                 ViewModel.ProcessInput(new KeyEvent(key, InputType.Down));
         }
     }

@@ -5,10 +5,9 @@ using Visualization.Scene.Abstractions;
 
 namespace Visualization.Interaction
 {
-    public sealed class CameraController(ICameraSystem cameraSystem) : IController
+    public sealed class CameraMouseController(ICameraSystem cameraSystem) : IController
     {
         private Vector2 _lastMousePosition;
-
         private bool _isRightPressed;
         private bool _isMiddlePressed;
 
@@ -16,15 +15,6 @@ namespace Visualization.Interaction
         {
             switch (e)
             {
-                case KeyEvent keyEvent when keyEvent.InputType == InputType.Down:
-                    if (keyEvent.Key == Key.F)
-                    {
-                        cameraSystem.ZoomToFit();
-                        return true;
-                    }
-
-                    return false;
-
                 case MouseClickEvent clickEvent:
                     _lastMousePosition = clickEvent.Position;
 
@@ -42,20 +32,17 @@ namespace Visualization.Interaction
 
                 case MouseMoveEvent moveEvent:
                     if (_isRightPressed)
-                    {
                         cameraSystem.Orbit(_lastMousePosition, moveEvent.Position);
-                    }
                     else if (_isMiddlePressed)
-                    {
                         cameraSystem.Pan(_lastMousePosition, moveEvent.Position);
-                    }
 
                     _lastMousePosition = moveEvent.Position;
 
                     return _isRightPressed || _isMiddlePressed;
-            }
 
-            return false;
+                default:
+                    return false;
+            }
         }
 
         public void Update(float deltaTime) { }

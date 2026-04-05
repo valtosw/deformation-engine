@@ -12,7 +12,7 @@ namespace Visualization.UI.Extensions
                 Wpf.MouseButton.Left   => Engine.MouseButton.Left,
                 Wpf.MouseButton.Right  => Engine.MouseButton.Right,
                 Wpf.MouseButton.Middle => Engine.MouseButton.Middle,
-                _ => throw new NotSupportedException("Unsupported mouse button: " + mouseButton)
+                _                      => Engine.MouseButton.Unknown
             };
         }
     }

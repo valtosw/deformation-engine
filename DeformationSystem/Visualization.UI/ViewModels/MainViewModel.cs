@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using OpenTK.Mathematics;
 using Visualization.Abstractions.Geometry;
 using Visualization.Interaction;
@@ -15,14 +14,15 @@ namespace Visualization.UI.ViewModels
     {
         public MainViewModel()
         {
-            Camera = new CameraSystem();
+            CameraSystem = new CameraSystem();
             Engine = new VisualizationEngine(new SceneRenderer());
 
-            Engine.RegisterController(new CameraController(Camera));
+            Engine.RegisterController(new CameraKeyboardController(CameraSystem));
+            Engine.RegisterController(new CameraMouseController(CameraSystem));
         }
 
         public VisualizationEngine Engine { get; }
-        public ICameraSystem Camera { get; }
+        public ICameraSystem CameraSystem { get; }
 
         public void InitializeRendering()
         {
@@ -39,12 +39,12 @@ namespace Visualization.UI.ViewModels
 
         public void Resize(int width, int height)
         {
-            Camera.SetViewport(width, height);
+            CameraSystem.SetViewport(width, height);
         }
 
         public void Render(float deltaTime)
         {
-            Engine.UpdateAndRender(deltaTime, Camera.ViewMatrix, Camera.ProjectionMatrix);
+            Engine.UpdateAndRender(deltaTime, CameraSystem.ViewMatrix, CameraSystem.ProjectionMatrix);
         }
 
         public void ProcessInput(InputEvent inputEvent)
