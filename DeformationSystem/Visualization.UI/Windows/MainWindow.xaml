@@ -7,7 +7,8 @@
     Title="3D Deformation System"
     Width="1200"
     Height="800"
-    Icon="../Resources/Icons/app.ico">
+    Icon="../Resources/Icons/app.ico"
+    KeyDown="Window_OnKeyDown">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="280"/>

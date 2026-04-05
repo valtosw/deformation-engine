@@ -6,6 +6,7 @@ using Visualization.Interaction.Input;
 using Visualization.UI.Extensions;
 using Visualization.UI.ViewModels;
 using InputType = Visualization.Interaction.Input.InputType;
+using Key = Visualization.Interaction.Input.Key;
 
 namespace Visualization.UI.Windows
 {
@@ -80,6 +81,14 @@ namespace Visualization.UI.Windows
         {
             var position = e.GetPosition(GlRenderingControl);
             ViewModel.ProcessInput(new MouseWheelEvent(new Vector2((float)position.X, (float)position.Y), e.Delta));
+        }
+
+        private void Window_OnKeyDown(object sender, KeyEventArgs e)
+        {
+            var key = e.Key.ToEngineKey();
+
+            if (key is not Key.Unknown)
+                ViewModel.ProcessInput(new KeyEvent(key, InputType.Down));
         }
     }
 }

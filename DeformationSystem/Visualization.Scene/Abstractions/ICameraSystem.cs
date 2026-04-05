@@ -16,6 +16,7 @@ namespace Visualization.Scene.Abstractions
         void Orbit(Vector2 oldMousePosition, Vector2 newMousePosition);
         void Pan(Vector2 oldMousePosition, Vector2 newMousePosition);
         void Zoom(float delta);
+        void ZoomToFit();
         void SetViewPreset(ViewPreset viewPreset);
         Ray GetRay(Vector2 mousePosition);
     }

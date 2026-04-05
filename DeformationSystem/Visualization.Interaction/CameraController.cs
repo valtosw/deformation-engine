@@ -16,6 +16,15 @@ namespace Visualization.Interaction
         {
             switch (e)
             {
+                case KeyEvent keyEvent when keyEvent.InputType == InputType.Down:
+                    if (keyEvent.Key == Key.F)
+                    {
+                        cameraSystem.ZoomToFit();
+                        return true;
+                    }
+
+                    return false;
+
                 case MouseClickEvent clickEvent:
                     _lastMousePosition = clickEvent.Position;
 
