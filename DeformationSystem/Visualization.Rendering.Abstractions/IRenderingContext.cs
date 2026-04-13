@@ -3,7 +3,7 @@ using Visualization.Abstractions.Geometry;
 
 namespace Visualization.Rendering.Abstractions
 {
-    public interface IRenderingContext
+    public interface IRenderingContext : IDisposable
     {
         void BeginFrame();
 

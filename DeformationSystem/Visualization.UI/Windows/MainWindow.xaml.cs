@@ -28,6 +28,12 @@ namespace Visualization.UI.Windows
 
         public MainViewModel ViewModel { get; }
 
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            GlRenderingControl.Dispose();
+        }
+
         private void GlRenderingControl_OnReady()
         {
             var shader = new Shader("default.vert", "default.frag");

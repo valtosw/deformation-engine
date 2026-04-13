@@ -10,6 +10,15 @@ namespace Visualization.Rendering
         private readonly Dictionary<int, MeshBuffer> _buffers = [];
         private int _nextBufferId = 1;
 
+        public void Dispose()
+        {
+            foreach (var buffer in _buffers.Values)
+                buffer.Dispose();
+
+            _buffers.Clear();
+            shader.Dispose();
+        }
+
         public void BeginFrame()
         {
             GL.ClearColor(0.1f, 0.1f, 0.12f, 1.0f);
