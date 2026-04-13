@@ -1,5 +1,4 @@
 <Solution>
-  <Project Path="Logging/Logging.csproj" Id="7907cf3c-38ae-4405-9dac-f74a55782b2e" />
   <Project Path="Shell/Shell.csproj" />
   <Project Path="Visualization.Abstractions/Visualization.Abstractions.csproj" Id="dad45364-ef6c-4ad2-b799-f5f2a507b767" />
   <Project Path="Visualization.Interaction/Visualization.Interaction.csproj" Id="48b70dfb-64b3-4e26-b4c4-3d9adb6e8479" />

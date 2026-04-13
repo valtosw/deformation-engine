@@ -10,8 +10,22 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Logging\Logging.csproj" />
+	  <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.5" />
+	  <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.5" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Page Include="App.xaml" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<ProjectReference Include="..\Visualization.UI\Visualization.UI.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Update="App.xaml.cs">
+	    <SubType>Code</SubType>
+	  </Compile>
 	</ItemGroup>
 
 </Project>
