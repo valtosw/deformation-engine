@@ -7,7 +7,7 @@ namespace Visualization.Interaction
 {
     public sealed class CameraKeyboardController(ICameraSystem cameraSystem) : IInputProcessor
     {
-        public bool ProcessInput(InputEvent e)
+        public bool ProcessInput(IInputEvent e)
         {
             if (e is not KeyEvent { InputType: InputType.Down } keyEvent)
                 return false;

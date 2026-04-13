@@ -4,6 +4,6 @@ namespace Visualization.Interaction.Abstractions
 {
     public interface IInputProcessor : IController
     {
-        bool ProcessInput(InputEvent e);
+        bool ProcessInput(IInputEvent e);
     }
 }

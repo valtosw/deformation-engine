@@ -38,7 +38,7 @@ namespace Visualization.UI.ViewModels
             Engine.UpdateAndRender(deltaTime, CameraSystem.ViewMatrix, CameraSystem.ProjectionMatrix);
         }
 
-        public void ProcessInput(InputEvent inputEvent)
+        public void ProcessInput(IInputEvent inputEvent)
         {
             Engine.ProcessInput(inputEvent);
         }

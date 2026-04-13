@@ -11,7 +11,7 @@ namespace Visualization.Interaction
         private bool _isRightPressed;
         private bool _isMiddlePressed;
 
-        public bool ProcessInput(InputEvent e)
+        public bool ProcessInput(IInputEvent e)
         {
             return e switch
             {

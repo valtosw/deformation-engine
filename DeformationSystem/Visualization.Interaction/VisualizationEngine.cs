@@ -32,7 +32,7 @@ namespace Visualization.Interaction
             RenderingContext = context;
         }
 
-        public void ProcessInput(InputEvent e)
+        public void ProcessInput(IInputEvent e)
         {
             for (var i = _inputProcessors.Count - 1; i >= 0; i--)
             {
