@@ -17,7 +17,7 @@
         <StackPanel Grid.Column="0"
                     Background="{StaticResource PanelBrush}"
                     Margin="5">
-            <Button Content="Load Object"/>
+            <Button Content="Load Object" Click="LoadObject_OnClick"/>
             <controls:ParameterPanel/>
             <Button Content="Apply Deformation"/>
             <Separator Margin="10"/>

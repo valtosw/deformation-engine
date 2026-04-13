@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using FileProcessing;
+using FileProcessing.Abstractions;
+using FileProcessing.Importers;
+using Microsoft.Extensions.DependencyInjection;
 using System.Windows;
 using Visualization.Interaction;
 using Visualization.Scene;
@@ -22,6 +25,10 @@ namespace Shell
             services.AddSingleton<ICameraSystem, CameraSystem>();
             services.AddSingleton<ISceneRenderer, SceneRenderer>();
             services.AddSingleton<VisualizationEngine>();
+
+            services.AddSingleton<IMeshImporter, ObjMeshImporter>();
+            services.AddSingleton<IMeshImporter, StlMeshImporter>();
+            services.AddSingleton<IMeshImporterFactory, MeshImporterFactory>();
 
             services.AddTransient<MainViewModel>();
             services.AddTransient<MainWindow>();

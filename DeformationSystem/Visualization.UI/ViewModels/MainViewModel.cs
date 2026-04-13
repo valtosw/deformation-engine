@@ -1,4 +1,5 @@
-﻿using OpenTK.Mathematics;
+﻿using FileProcessing.Abstractions;
+using System.IO;
 using Visualization.Abstractions.Geometry;
 using Visualization.Interaction;
 using Visualization.Interaction.Input;
@@ -10,10 +11,14 @@ namespace Visualization.UI.ViewModels
 {
     public sealed class MainViewModel
     {
-        public MainViewModel(VisualizationEngine engine, ICameraSystem cameraSystem)
+        private readonly IMeshImporterFactory _meshImporterFactory;
+        private MeshNode? _activeMeshNode;
+
+        public MainViewModel(VisualizationEngine engine, ICameraSystem cameraSystem, IMeshImporterFactory meshImporterFactory)
         {
             Engine = engine;
             CameraSystem = cameraSystem;
+            _meshImporterFactory = meshImporterFactory;
 
             Engine.RegisterController(new CameraKeyboardController(CameraSystem, Engine));
             Engine.RegisterController(new CameraMouseController(CameraSystem));
@@ -25,7 +30,6 @@ namespace Visualization.UI.ViewModels
         public void InitializeRendering(IRenderingContext renderingContext)
         {
             Engine.Initialize(renderingContext);
-            CreateTestScene();
         }
 
         public void Resize(int width, int height)
@@ -43,52 +47,22 @@ namespace Visualization.UI.ViewModels
             Engine.ProcessInput(inputEvent);
         }
 
-        private void CreateTestScene()
+        public void LoadMesh(string filePath)
         {
-            var mesh = new Mesh(
-            [
-                // Front face
-                new Vertex(new Vector3(-0.5f, -0.5f,  0.5f), new Vector3(0, 0, 1)),
-                new Vertex(new Vector3( 0.5f, -0.5f,  0.5f), new Vector3(0, 0, 1)),
-                new Vertex(new Vector3( 0.5f,  0.5f,  0.5f), new Vector3(0, 0, 1)),
-                new Vertex(new Vector3(-0.5f,  0.5f,  0.5f), new Vector3(0, 0, 1)),
-                // Back face
-                new Vertex(new Vector3( 0.5f, -0.5f, -0.5f), new Vector3(0, 0, -1)),
-                new Vertex(new Vector3(-0.5f, -0.5f, -0.5f), new Vector3(0, 0, -1)),
-                new Vertex(new Vector3(-0.5f,  0.5f, -0.5f), new Vector3(0, 0, -1)),
-                new Vertex(new Vector3( 0.5f,  0.5f, -0.5f), new Vector3(0, 0, -1)),
-                // Top face
-                new Vertex(new Vector3(-0.5f,  0.5f,  0.5f), new Vector3(0, 1, 0)),
-                new Vertex(new Vector3( 0.5f,  0.5f,  0.5f), new Vector3(0, 1, 0)),
-                new Vertex(new Vector3( 0.5f,  0.5f, -0.5f), new Vector3(0, 1, 0)),
-                new Vertex(new Vector3(-0.5f,  0.5f, -0.5f), new Vector3(0, 1, 0)),
-                // Bottom face
-                new Vertex(new Vector3(-0.5f, -0.5f, -0.5f), new Vector3(0, -1, 0)),
-                new Vertex(new Vector3( 0.5f, -0.5f, -0.5f), new Vector3(0, -1, 0)),
-                new Vertex(new Vector3( 0.5f, -0.5f,  0.5f), new Vector3(0, -1, 0)),
-                new Vertex(new Vector3(-0.5f, -0.5f,  0.5f), new Vector3(0, -1, 0)),
-                // Right face
-                new Vertex(new Vector3( 0.5f, -0.5f,  0.5f), new Vector3(1, 0, 0)),
-                new Vertex(new Vector3( 0.5f, -0.5f, -0.5f), new Vector3(1, 0, 0)),
-                new Vertex(new Vector3( 0.5f,  0.5f, -0.5f), new Vector3(1, 0, 0)),
-                new Vertex(new Vector3( 0.5f,  0.5f,  0.5f), new Vector3(1, 0, 0)),
-                // Left face
-                new Vertex(new Vector3(-0.5f, -0.5f, -0.5f), new Vector3(-1, 0, 0)),
-                new Vertex(new Vector3(-0.5f, -0.5f,  0.5f), new Vector3(-1, 0, 0)),
-                new Vertex(new Vector3(-0.5f,  0.5f,  0.5f), new Vector3(-1, 0, 0)),
-                new Vertex(new Vector3(-0.5f,  0.5f, -0.5f), new Vector3(-1, 0, 0)),
-            ],
-            [
-                 0,  1,  2,   2,  3,  0, // Front
-                 4,  5,  6,   6,  7,  4, // Back
-                 8,  9, 10,  10, 11,  8, // Top
-                12, 13, 14,  14, 15, 12, // Bottom
-                16, 17, 18,  18, 19, 16, // Right
-                20, 21, 22,  22, 23, 20, // Left
-            ]);
+            var extension = Path.GetExtension(filePath).ToLowerInvariant();
+            var importer = _meshImporterFactory.GetImporter(extension);
 
-            var cubeNode = new MeshNode { Mesh = mesh };
-            Engine.RootNode.AddChild(cubeNode);
+            using var stream = File.OpenRead(filePath);
+            var mesh = importer.Load(stream);
+
+            if (_activeMeshNode is not null)
+                Engine.RootNode.RemoveChild(_activeMeshNode);
+
+            _activeMeshNode = new MeshNode { Mesh = mesh };
+            Engine.RootNode.AddChild(_activeMeshNode);
+
+            CameraSystem.TargetSphere = BoundingSphere.FromAxisAlignedBoundingBox(_activeMeshNode.BoundingBox);
+            CameraSystem.ZoomToFit();
         }
     }
 }
