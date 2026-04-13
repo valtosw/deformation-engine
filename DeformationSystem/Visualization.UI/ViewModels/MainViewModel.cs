@@ -1,10 +1,8 @@
-﻿using System.IO;
-using OpenTK.Mathematics;
+﻿using OpenTK.Mathematics;
 using Visualization.Abstractions.Geometry;
 using Visualization.Interaction;
 using Visualization.Interaction.Input;
-using Visualization.Rendering;
-using Visualization.Scene;
+using Visualization.Rendering.Abstractions;
 using Visualization.Scene.Abstractions;
 using Visualization.Scene.Nodes;
 
@@ -12,10 +10,10 @@ namespace Visualization.UI.ViewModels
 {
     public sealed class MainViewModel
     {
-        public MainViewModel()
+        public MainViewModel(VisualizationEngine engine, ICameraSystem cameraSystem)
         {
-            CameraSystem = new CameraSystem();
-            Engine = new VisualizationEngine(new SceneRenderer());
+            Engine = engine;
+            CameraSystem = cameraSystem;
 
             Engine.RegisterController(new CameraKeyboardController(CameraSystem));
             Engine.RegisterController(new CameraMouseController(CameraSystem));
@@ -24,16 +22,9 @@ namespace Visualization.UI.ViewModels
         public VisualizationEngine Engine { get; }
         public ICameraSystem CameraSystem { get; }
 
-        public void InitializeRendering()
+        public void InitializeRendering(IRenderingContext renderingContext)
         {
-            var shadersDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Shaders");
-            var shader = new Shader(
-                Path.Combine(shadersDirectory, "default.vert"),
-                Path.Combine(shadersDirectory, "default.frag"));
-
-            var renderingContext = new GlRenderingContext(shader);
             Engine.Initialize(renderingContext);
-
             CreateTestScene();
         }
 

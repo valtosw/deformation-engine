@@ -8,11 +8,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Page Include="App.xaml" />
-		<ApplicationDefinition Remove="App.xaml" />
-	</ItemGroup>
-
-	<ItemGroup>
 	  <None Remove="Resources\app.ico" />
 	</ItemGroup>
 

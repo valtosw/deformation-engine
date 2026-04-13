@@ -3,11 +3,12 @@ using Visualization.Abstractions.Constants;
 using Visualization.Abstractions.Extensions;
 using Visualization.Abstractions.Geometry;
 using Visualization.Abstractions.Math;
+using Visualization.Scene.Abstractions;
 using Visualization.Scene.Constants;
 using Visualization.Scene.Enums;
 using Visualization.Scene.Nodes;
 
-namespace Visualization.Scene.Abstractions
+namespace Visualization.Scene.Camera
 {
     public sealed class CameraSystem : ICameraSystem
     {
