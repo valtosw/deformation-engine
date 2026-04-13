@@ -5,7 +5,7 @@ using Visualization.Scene.Enums;
 
 namespace Visualization.Interaction
 {
-    public sealed class CameraKeyboardController(ICameraSystem cameraSystem) : IInputProcessor
+    public sealed class CameraKeyboardController(ICameraSystem cameraSystem, VisualizationEngine engine) : IInputProcessor
     {
         public bool ProcessInput(IInputEvent e)
         {
@@ -15,6 +15,7 @@ namespace Visualization.Interaction
             Action? action = keyEvent.Key switch
             {
                 Key.F  => cameraSystem.ZoomToFit,
+                Key.P  => ToggleWireframeMode,
                 Key.V  => ToggleCameraMode,
                 Key.D1 => () => cameraSystem.SetViewPreset(ViewPreset.Front),
                 Key.D2 => () => cameraSystem.SetViewPreset(ViewPreset.Back),
@@ -35,6 +36,14 @@ namespace Visualization.Interaction
             cameraSystem.CameraMode = cameraSystem.CameraMode == CameraMode.Perspective
                 ? CameraMode.Orthographic
                 : CameraMode.Perspective;
+        }
+
+        private void ToggleWireframeMode()
+        {
+            if (engine.RenderingContext is null)
+                return;
+
+            engine.RenderingContext.IsWireframeEnabled = !engine.RenderingContext.IsWireframeEnabled;
         }
     }
 }

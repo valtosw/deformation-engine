@@ -15,7 +15,7 @@ namespace Visualization.UI.ViewModels
             Engine = engine;
             CameraSystem = cameraSystem;
 
-            Engine.RegisterController(new CameraKeyboardController(CameraSystem));
+            Engine.RegisterController(new CameraKeyboardController(CameraSystem, Engine));
             Engine.RegisterController(new CameraMouseController(CameraSystem));
         }
 
