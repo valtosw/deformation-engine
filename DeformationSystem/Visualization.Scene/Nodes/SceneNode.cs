@@ -88,13 +88,33 @@ namespace Visualization.Scene.Nodes
                 if (_cachedBoundingBox is not null) 
                     return _cachedBoundingBox;
 
-                var worldPoints = EnumerateLocalPoints().Select(point => WorldTransform.TransformPoint(point));
-                var boundingBox = AxisAlignedBoundingBox.FromPoints(worldPoints);
+                AxisAlignedBoundingBox? boundingBox = null;
+
+                if (LocalBoundingBox is { } localBoundingBox)
+                {
+                    var min = localBoundingBox.Min;
+                    var max = localBoundingBox.Max;
+
+                    var corners = new Vector3[]
+                    {
+                        new(min.X, min.Y, min.Z), new(max.X, min.Y, min.Z),
+                        new(min.X, max.Y, min.Z), new(max.X, max.Y, min.Z),
+                        new(min.X, min.Y, max.Z), new(max.X, min.Y, max.Z),
+                        new(min.X, max.Y, max.Z), new(max.X, max.Y, max.Z)
+                    };
+
+                    var worldCorners = corners.Select(c => WorldTransform.TransformPoint(c));
+                    boundingBox = AxisAlignedBoundingBox.FromPoints(worldCorners);
+                }
+
                 boundingBox = _children.Aggregate(boundingBox, (current, child) => AxisAlignedBoundingBox.Combine(current, child.BoundingBox));
 
-                return _cachedBoundingBox = boundingBox;
+                return _cachedBoundingBox = boundingBox 
+                    ?? new AxisAlignedBoundingBox(WorldTransform.TransformPoint(Vector3.Zero), WorldTransform.TransformPoint(Vector3.Zero));
             }
         }
+
+        protected virtual AxisAlignedBoundingBox? LocalBoundingBox => null;
 
         public void AddChild(SceneNode child)
         {
@@ -116,11 +136,6 @@ namespace Visualization.Scene.Nodes
 
             foreach (var child in _children)
                 child.OnRendering(renderingContext);
-        }
-
-        protected virtual IEnumerable<Vector3> EnumerateLocalPoints()
-        {
-            return [];
         }
 
         private protected void InvalidateBoundingBox()

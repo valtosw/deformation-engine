@@ -24,6 +24,8 @@ namespace Visualization.Scene.Nodes
             }
         }
 
+        protected override AxisAlignedBoundingBox? LocalBoundingBox => _mesh?.LocalBoundingBox;
+
         public override void OnRendering(IRenderingContext renderingContext)
         {
             if (_mesh is null)
@@ -48,16 +50,9 @@ namespace Visualization.Scene.Nodes
 
         public void NotifyGeometryChanged()
         {
+            _mesh?.UpdateLocalBoundingBox();
             _isBufferDirty = true;
-        }
-
-        protected override IEnumerable<Vector3> EnumerateLocalPoints()
-        {
-            if (_mesh is null)
-                yield break;
-
-            foreach (var vertex in _mesh.Vertices)
-                yield return vertex.Position;
+            InvalidateBoundingBox();
         }
     }
 }
