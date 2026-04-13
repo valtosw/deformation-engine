@@ -10,6 +10,7 @@ namespace Visualization.UI.Extensions
             return key switch
             {
                 Wpf.Key.F  => Engine.Key.F,
+                Wpf.Key.P  => Engine.Key.P,
                 Wpf.Key.V  => Engine.Key.V,
                 Wpf.Key.D1 => Engine.Key.D1,
                 Wpf.Key.D2 => Engine.Key.D2,

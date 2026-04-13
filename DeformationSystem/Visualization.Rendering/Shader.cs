@@ -50,6 +50,12 @@ namespace Visualization.Rendering
             GL.Uniform3(location, vector);
         }
 
+        public void SetBool(string name, bool value)
+        {
+            var location = GL.GetUniformLocation(_handle, name);
+            GL.Uniform1(location, value ? 1 : 0);
+        }
+
         private static int CompileShader(ShaderType type, string source)
         {
             var shader = GL.CreateShader(type);

@@ -10,6 +10,8 @@ namespace Visualization.Rendering
         private readonly Dictionary<int, MeshBuffer> _buffers = [];
         private int _nextBufferId = 1;
 
+        public bool IsWireframeEnabled { get; set; }
+
         public void Dispose()
         {
             foreach (var buffer in _buffers.Values)
@@ -21,10 +23,14 @@ namespace Visualization.Rendering
 
         public void BeginFrame()
         {
-            GL.ClearColor(0.1f, 0.1f, 0.12f, 1.0f);
+            GL.ClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             GL.Enable(EnableCap.DepthTest);
+
+            GL.PolygonMode(TriangleFace.FrontAndBack, IsWireframeEnabled ? PolygonMode.Line : PolygonMode.Fill);
+
             shader.Use();
+            shader.SetBool("isWireframe", IsWireframeEnabled);
         }
 
         public void SetMatrix(string name, Matrix4 matrix)

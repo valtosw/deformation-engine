@@ -1,11 +1,12 @@
-﻿using System.Windows;
+﻿using Microsoft.Win32;
 using OpenTK.Mathematics;
 using OpenTK.Wpf;
+using System.Windows;
 using System.Windows.Input;
 using Visualization.Interaction.Input;
+using Visualization.Rendering;
 using Visualization.UI.Extensions;
 using Visualization.UI.ViewModels;
-using Visualization.Rendering;
 using InputType = Visualization.Interaction.Input.InputType;
 using Key = Visualization.Interaction.Input.Key;
 
@@ -98,6 +99,27 @@ namespace Visualization.UI.Windows
 
             if (key != Key.Unknown)
                 ViewModel.ProcessInput(new KeyEvent(key, InputType.Down));
+        }
+
+        private void LoadObject_OnClick(object sender, RoutedEventArgs e)
+        {
+            var openFileDialog = new OpenFileDialog
+            {
+                Filter = "3D Models (*.obj;*.stl)|*.obj;*.stl|All files (*.*)|*.*",
+                Title = "Select a 3D Model"
+            };
+
+            if (openFileDialog.ShowDialog() != true)
+                return;
+
+            try
+            {
+                ViewModel.LoadMesh(openFileDialog.FileName);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to load model:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }

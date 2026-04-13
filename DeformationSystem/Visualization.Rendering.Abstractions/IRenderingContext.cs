@@ -5,6 +5,8 @@ namespace Visualization.Rendering.Abstractions
 {
     public interface IRenderingContext : IDisposable
     {
+        bool IsWireframeEnabled { get; set; }
+
         void BeginFrame();
 
         void SetMatrix(string name, Matrix4 matrix);
