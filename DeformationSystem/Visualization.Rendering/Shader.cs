@@ -8,10 +8,10 @@ namespace Visualization.Rendering
     {
         private readonly int _handle;
 
-        public Shader(string vertexSourcePath, string fragmentSourcePath)
+        public Shader(string vertexResourceName, string fragmentResourceName)
         {
-            var vertexSource = File.ReadAllText(vertexSourcePath);
-            var fragmentSource = File.ReadAllText(fragmentSourcePath);
+            var vertexSource = ReadEmbeddedResource(vertexResourceName);
+            var fragmentSource = ReadEmbeddedResource(fragmentResourceName);
 
             var vertexShader = CompileShader(ShaderType.VertexShader, vertexSource);
             var fragmentShader = CompileShader(ShaderType.FragmentShader, fragmentSource);
@@ -57,6 +57,19 @@ namespace Visualization.Rendering
             GL.CompileShader(shader);
 
             return shader;
+        }
+
+        private static string ReadEmbeddedResource(string name)
+        {
+            var assembly = typeof(Shader).Assembly;
+            var resourceName = $"Visualization.Rendering.Shaders.{name}";
+
+            using var stream = assembly.GetManifestResourceStream(resourceName)
+                ?? throw new FileNotFoundException($"Resource '{resourceName}' not found.");
+
+            using var reader = new StreamReader(stream);
+
+            return reader.ReadToEnd();
         }
     }
 }

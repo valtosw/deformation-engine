@@ -5,57 +5,30 @@ using Visualization.Scene.Enums;
 
 namespace Visualization.Interaction
 {
-    public sealed class CameraKeyboardController(ICameraSystem cameraSystem) : IController
+    public sealed class CameraKeyboardController(ICameraSystem cameraSystem) : IInputProcessor
     {
-        public bool ProcessInput(InputEvent e)
+        public bool ProcessInput(IInputEvent e)
         {
-            if (e is not KeyEvent keyEvent || keyEvent.InputType != InputType.Down)
+            if (e is not KeyEvent { InputType: InputType.Down } keyEvent)
                 return false;
 
-            switch (keyEvent.Key)
+            Action? action = keyEvent.Key switch
             {
-                case Key.F:
-                    cameraSystem.ZoomToFit();
-                    return true;
+                Key.F  => cameraSystem.ZoomToFit,
+                Key.V  => ToggleCameraMode,
+                Key.D1 => () => cameraSystem.SetViewPreset(ViewPreset.Front),
+                Key.D2 => () => cameraSystem.SetViewPreset(ViewPreset.Back),
+                Key.D3 => () => cameraSystem.SetViewPreset(ViewPreset.Left),
+                Key.D4 => () => cameraSystem.SetViewPreset(ViewPreset.Right),
+                Key.D5 => () => cameraSystem.SetViewPreset(ViewPreset.Top),
+                Key.D6 => () => cameraSystem.SetViewPreset(ViewPreset.Bottom),
+                Key.D7 => () => cameraSystem.SetViewPreset(ViewPreset.Isometric),
+                _      => null
+            };
 
-                case Key.V:
-                    ToggleCameraMode();
-                    return true;
-
-                case Key.D1:
-                    cameraSystem.SetViewPreset(ViewPreset.Front);
-                    return true;
-
-                case Key.D2:
-                    cameraSystem.SetViewPreset(ViewPreset.Back);
-                    return true;
-
-                case Key.D3:
-                    cameraSystem.SetViewPreset(ViewPreset.Left);
-                    return true;
-
-                case Key.D4:
-                    cameraSystem.SetViewPreset(ViewPreset.Right);
-                    return true;
-
-                case Key.D5:
-                    cameraSystem.SetViewPreset(ViewPreset.Top);
-                    return true;
-
-                case Key.D6:
-                    cameraSystem.SetViewPreset(ViewPreset.Bottom);
-                    return true;
-
-                case Key.D7:
-                    cameraSystem.SetViewPreset(ViewPreset.Isometric);
-                    return true;
-
-                default:
-                    return false;
-            }
+            action?.Invoke();
+            return action is not null;
         }
-
-        public void Update(float deltaTime) { }
 
         private void ToggleCameraMode()
         {

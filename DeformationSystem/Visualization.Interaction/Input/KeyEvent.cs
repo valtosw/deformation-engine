@@ -1,4 +1,4 @@
 ﻿namespace Visualization.Interaction.Input
 {
-    public sealed record KeyEvent(Key Key, InputType InputType) : InputEvent;
+    public readonly record struct KeyEvent(Key Key, InputType InputType) : IInputEvent;
 }

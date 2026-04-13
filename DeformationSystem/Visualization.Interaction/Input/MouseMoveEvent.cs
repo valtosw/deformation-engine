@@ -2,5 +2,5 @@
 
 namespace Visualization.Interaction.Input
 {
-    public sealed record MouseMoveEvent(Vector2 Position) : InputEvent;
+    public readonly record struct MouseMoveEvent(Vector2 Position) : IInputEvent;
 }

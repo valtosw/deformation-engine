@@ -20,12 +20,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Shaders\default.frag">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Shaders\default.vert">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+	<EmbeddedResource Include="Shaders\default.frag" />
+	<EmbeddedResource Include="Shaders\default.vert" />
   </ItemGroup>
 
 </Project>

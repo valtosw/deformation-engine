@@ -10,6 +10,8 @@ namespace Visualization.Interaction
     public sealed class VisualizationEngine(ISceneRenderer renderer)
     {
         private readonly List<IController> _controllers = [];
+        private readonly List<IInputProcessor> _inputProcessors = [];
+        private readonly List<IUpdater> _updaters = [];
 
         public SceneNode RootNode { get; } = new();
         public IRenderingContext? RenderingContext { get; private set; }
@@ -17,6 +19,12 @@ namespace Visualization.Interaction
         public void RegisterController(IController controller)
         {
             _controllers.Add(controller);
+
+            if (controller is IInputProcessor inputProcessor)
+                _inputProcessors.Add(inputProcessor);
+
+            if (controller is IUpdater updater)
+                _updaters.Add(updater);
         }
 
         public void Initialize(IRenderingContext context)
@@ -24,11 +32,11 @@ namespace Visualization.Interaction
             RenderingContext = context;
         }
 
-        public void ProcessInput(InputEvent e)
+        public void ProcessInput(IInputEvent e)
         {
-            for (var i = _controllers.Count - 1; i >= 0; i--)
+            for (var i = _inputProcessors.Count - 1; i >= 0; i--)
             {
-                if (_controllers[i].ProcessInput(e))
+                if (_inputProcessors[i].ProcessInput(e))
                     break;
             }
         }
@@ -38,8 +46,8 @@ namespace Visualization.Interaction
             if (RenderingContext is null) 
                 return;
 
-            foreach (var controller in _controllers)
-                controller.Update(deltaTime);
+            foreach (var updater in _updaters)
+                updater.Update(deltaTime);
 
             renderer.Render(RootNode, RenderingContext, viewMatrix, projectionMatrix);
         }

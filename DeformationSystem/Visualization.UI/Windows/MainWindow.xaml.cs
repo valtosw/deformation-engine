@@ -5,6 +5,7 @@ using System.Windows.Input;
 using Visualization.Interaction.Input;
 using Visualization.UI.Extensions;
 using Visualization.UI.ViewModels;
+using Visualization.Rendering;
 using InputType = Visualization.Interaction.Input.InputType;
 using Key = Visualization.Interaction.Input.Key;
 
@@ -12,14 +13,11 @@ namespace Visualization.UI.Windows
 {
     public sealed partial class MainWindow
     {
-        public MainViewModel ViewModel { get; }
-
-        public MainWindow()
+        public MainWindow(MainViewModel viewModel)
         {
             InitializeComponent();
-
-            DataContext = new MainViewModel();
-            ViewModel = DataContext as MainViewModel ?? throw new InvalidCastException("Failed to cast DataContext");
+            ViewModel = viewModel;
+            DataContext = viewModel;
 
             GlRenderingControl.Start(new GLWpfControlSettings
             {
@@ -28,9 +26,20 @@ namespace Visualization.UI.Windows
             });
         }
 
+        public MainViewModel ViewModel { get; }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            GlRenderingControl.Dispose();
+        }
+
         private void GlRenderingControl_OnReady()
         {
-            ViewModel.InitializeRendering();
+            var shader = new Shader("default.vert", "default.frag");
+            var renderingContext = new GlRenderingContext(shader);
+
+            ViewModel.InitializeRendering(renderingContext);
             ViewModel.Resize((int)GlRenderingControl.ActualWidth, (int)GlRenderingControl.ActualHeight);
         }
 

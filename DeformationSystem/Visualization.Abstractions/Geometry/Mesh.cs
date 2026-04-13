@@ -1,9 +1,22 @@
 ﻿namespace Visualization.Abstractions.Geometry
 {
-    public sealed class Mesh(Vertex[] vertices, uint[] indices)
+    public sealed class Mesh
     {
-        public Vertex[] Vertices { get; set; } = vertices;
-        public uint[] Indices { get; set; } = indices;
+        public Vertex[] Vertices { get; set; }
+        public uint[] Indices { get; set; }
+        public AxisAlignedBoundingBox LocalBoundingBox { get; private set; } = null!;
+
+        public Mesh(Vertex[] vertices, uint[] indicies)
+        {
+            Vertices = vertices;
+            Indices = indicies;
+            UpdateLocalBoundingBox();
+        }
+
+        public void UpdateLocalBoundingBox()
+        {
+            LocalBoundingBox = AxisAlignedBoundingBox.FromPoints(Vertices.Select(v => v.Position));
+        }
 
         public static Mesh FromTriangles(List<Triangle> triangles)
         {
