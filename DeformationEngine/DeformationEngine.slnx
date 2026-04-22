@@ -1,0 +1,10 @@
+<Solution>
+  <Project Path="Deformation.IO/Deformation.IO.csproj" Id="bd2bec3d-2cc4-4c50-8a01-29d2742dd75b" />
+  <Project Path="Application.Host/Application.Host.csproj" />
+  <Project Path="Deformation.Abstractions/Deformation.Abstractions.csproj" Id="dad45364-ef6c-4ad2-b799-f5f2a507b767" />
+  <Project Path="Deformation.Interaction/Deformation.Interaction.csproj" Id="48b70dfb-64b3-4e26-b4c4-3d9adb6e8479" />
+  <Project Path="Rendering.Abstractions/Rendering.Abstractions.csproj" Id="0c3c7c5c-9c71-4a8d-baf6-6ca120529930" />
+  <Project Path="Rendering.OpenGL/Rendering.OpenGL.csproj" />
+  <Project Path="Deformation.Scene/Deformation.Scene.csproj" Id="9b11c728-49db-453b-af4c-35eb4dc10e50" />
+  <Project Path="Application.UI/Application.UI.csproj" Id="33d7f980-fedd-4b6e-81b4-806d15a76a1d" />
+</Solution>
