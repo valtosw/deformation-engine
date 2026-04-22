@@ -11,7 +11,9 @@ namespace FileProcessing
             foreach (var importer in importers)
             {
                 foreach (var extension in importer.SupportedExtensions)
+                {
                     _importers[extension] = importer;
+                }
             }
         }
 

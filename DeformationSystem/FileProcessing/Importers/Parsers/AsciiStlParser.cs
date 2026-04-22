@@ -1,14 +1,18 @@
-﻿using System.Globalization;
+﻿using FileProcessing.Abstractions;
 using OpenTK.Mathematics;
+using System.Globalization;
+using System.Text;
 using Visualization.Abstractions.Comparers;
 using Visualization.Abstractions.Geometry;
 
 namespace FileProcessing.Importers.Parsers
 {
-    public sealed class AsciiStlParser(StreamReader streamReader)
+    public sealed class AsciiStlParser : IStlParser
     {
-        public Mesh Parse()
+        public Mesh Parse(Stream stream)
         {
+            using var streamReader = new StreamReader(stream, Encoding.UTF8, leaveOpen: true);
+
             var vertices = new List<Vertex>();
             var indices = new List<uint>();
             var vertexCache = new Dictionary<Vector3, uint>(new Vector3EqualityComparer());

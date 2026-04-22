@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using FileProcessing.Abstractions;
 using FileProcessing.Constants;
 using OpenTK.Mathematics;
 using Visualization.Abstractions.Comparers;
@@ -6,14 +7,14 @@ using Visualization.Abstractions.Geometry;
 
 namespace FileProcessing.Importers.Parsers
 {
-    public sealed class BinaryStlParser(Stream stream)
+    public sealed class BinaryStlParser : IStlParser
     {
-        public Mesh Parse()
-        {   
+        public Mesh Parse(Stream stream)
+        {
             using var binaryReader = new BinaryReader(stream, Encoding.UTF8, leaveOpen: true);
-            
+
             binaryReader.ReadBytes(ImporterConstants.Stl.HeaderSize);
-            
+
             var triangleCount = (int)binaryReader.ReadUInt32();
             var vertices = new List<Vertex>(triangleCount * ImporterConstants.Stl.VerticesPerTriangle / 2);
             var indices = new List<uint>(triangleCount * ImporterConstants.Stl.VerticesPerTriangle);
@@ -23,11 +24,9 @@ namespace FileProcessing.Importers.Parsers
             {
                 var normal = ReadVector3(binaryReader);
 
-                for (var v = 0; v < ImporterConstants.Stl.VerticesPerTriangle; v++)
-                {
-                    var position = ReadVector3(binaryReader);
-                    AddVertex(position, normal);
-                }
+                AddVertex(ReadVector3(binaryReader), normal);
+                AddVertex(ReadVector3(binaryReader), normal);
+                AddVertex(ReadVector3(binaryReader), normal);
 
                 binaryReader.ReadUInt16();
             }

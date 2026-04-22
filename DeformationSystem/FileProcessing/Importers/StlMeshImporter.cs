@@ -12,31 +12,21 @@ namespace FileProcessing.Importers
 
         public Mesh Load(Stream stream)
         {
-            if (IsBinaryStl(stream))
-            {
-                var binaryParser = new BinaryStlParser(stream);
-                return binaryParser.Parse();
-            }
+            IStlParser parser = IsAsciiStl(stream)
+                ? new AsciiStlParser()
+                : new BinaryStlParser();
 
-            using var streamReader = new StreamReader(stream, Encoding.UTF8, leaveOpen: true);
-            var asciiParser = new AsciiStlParser(streamReader);
-            return asciiParser.Parse();
+            return parser.Parse(stream);
         }
 
-        private static bool IsBinaryStl(Stream stream)
+        private static bool IsAsciiStl(Stream stream)
         {
-            if (stream.Length < ImporterConstants.Stl.MinimumBinaryFileSize)
-                return false;
-
-            stream.Position = ImporterConstants.Stl.HeaderSize;
-            
-            using var reader = new BinaryReader(stream, Encoding.UTF8, leaveOpen: true);
-            var triangleCount = reader.ReadUInt32();
-
-            var expectedSize = ImporterConstants.Stl.MinimumBinaryFileSize + (triangleCount * ImporterConstants.Stl.BytesPerTriangle);
+            stream.Position = 0;
+            using var reader = new StreamReader(stream, Encoding.UTF8, leaveOpen: true);
+            var isAscii = reader.ReadLine()?.TrimStart().StartsWith("solid", StringComparison.OrdinalIgnoreCase) == true;
             stream.Position = 0;
 
-            return stream.Length == expectedSize;
+            return isAscii;
         }
     }
 }
