@@ -1,0 +1,29 @@
+version: 2
+updates:
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    
+    groups:
+      microsoft-dependencies:
+        patterns:
+          - "Microsoft.Extensions.*"
+      opentk-dependencies:
+        patterns:
+          - "OpenTK"
+          - "OpenTK.GLWpfControl"
+
+    labels:
+      - "dependencies"
+      - ".NET"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "ci-cd"
+      - "dependencies"
