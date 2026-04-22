@@ -28,9 +28,9 @@ jobs:
         run: dotnet --info
 
       - name: Restore
-        run: dotnet restore DeformationSystem/DeformationSystem.slnx
+        run: dotnet restore DeformationEngine/DeformationEngine.slnx
 
       - name: Build (Release)
-        run: dotnet build DeformationSystem/DeformationSystem.slnx `
+        run: dotnet build DeformationEngine/DeformationEngine.slnx `
              --configuration Release `
              --no-restore
