@@ -1,4 +1,5 @@
 ﻿using Deformation.Abstractions.Comparers;
+using Deformation.Abstractions.Constants;
 using Deformation.Abstractions.Geometry;
 using Deformation.IO.Abstractions;
 using OpenTK.Mathematics;
@@ -15,6 +16,7 @@ namespace Deformation.IO.Importers.Parsers
 
             var vertices = new List<Vertex>();
             var indices = new List<uint>();
+            var normalSums = new List<Vector3>();
             var vertexCache = new Dictionary<Vector3, uint>(new Vector3EqualityComparer());
 
             string? line;
@@ -51,6 +53,14 @@ namespace Deformation.IO.Importers.Parsers
                 }
             }
 
+            for (var i = 0; i < vertices.Count; i++)
+            {
+                var vertex = vertices[i];
+                var sum = normalSums[i];
+                vertex.Normal = sum.LengthSquared > MathConstants.LengthTolerance ? sum.Normalized() : Vector3.UnitZ;
+                vertices[i] = vertex;
+            }
+
             return new Mesh([.. vertices], [.. indices]);
 
             void AddVertex(Vector3 position, Vector3 normal)
@@ -58,8 +68,13 @@ namespace Deformation.IO.Importers.Parsers
                 if (!vertexCache.TryGetValue(position, out var index))
                 {
                     index = (uint)vertices.Count;
-                    vertices.Add(new Vertex(position, normal));
+                    vertices.Add(new Vertex(position));
+                    normalSums.Add(normal);
                     vertexCache[position] = index;
+                }
+                else
+                {
+                    normalSums[(int)index] += normal;
                 }
 
                 indices.Add(index);
