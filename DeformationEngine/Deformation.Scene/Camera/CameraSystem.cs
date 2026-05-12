@@ -87,16 +87,17 @@ namespace Deformation.Scene.Camera
             var vector2 = MapToArcBall(newMousePosition);
 
             var axis = Vector3.Cross(vector2, vector1);
-            var dot = Vector3.Dot(vector1, vector2);
-            var angle = MathF.Atan2(axis.Length, MathHelper.Clamp(dot, -1f, 1f));
 
             if (axis.LengthSquared <= MathConstants.LengthTolerance)
             {
                 return;
             }
 
+            var dot = Vector3.Dot(vector1, vector2);
+            var angle = MathF.Atan2(axis.Length, MathHelper.Clamp(dot, -1f, 1f));
             var worldAxis = _viewNode.WorldTransform.TransformDirection(axis.Normalized()).Normalized();
-            _targetNode.Rotation *= Quaternion.FromAxisAngle(worldAxis, angle);
+
+            _targetNode.Rotation = Quaternion.FromAxisAngle(worldAxis, angle) * _targetNode.Rotation;
         }
 
         public void Pan(Vector2 oldMousePosition, Vector2 newMousePosition)
