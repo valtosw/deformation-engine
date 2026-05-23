@@ -12,6 +12,7 @@ namespace Rendering.OpenGL
         private readonly int _vertexArrayObject;
 
         private int _indexCount;
+        private int _vertexCount;
 
         #endregion
 
@@ -22,6 +23,7 @@ namespace Rendering.OpenGL
             _vertexBufferObject = GL.GenBuffer();
             _elementBufferObject = GL.GenBuffer();
             _vertexArrayObject = GL.GenVertexArray();
+
             Update(mesh);
         }
 
@@ -38,32 +40,41 @@ namespace Rendering.OpenGL
 
         public void Update(Mesh mesh)
         {
-            _indexCount = mesh.Indices.Length;
             GL.BindVertexArray(_vertexArrayObject);
-
             GL.BindBuffer(BufferTarget.ArrayBuffer, _vertexBufferObject);
-            GL.BufferData(BufferTarget.ArrayBuffer, size: mesh.Vertices.Length * 32, mesh.Vertices, BufferUsageHint.DynamicDraw);
 
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, _elementBufferObject);
-            GL.BufferData(BufferTarget.ElementArrayBuffer, size: mesh.Indices.Length * sizeof(uint), mesh.Indices, BufferUsageHint.StaticDraw);
+            if (_vertexCount != mesh.Vertices.Length || _indexCount != mesh.Indices.Length)
+            {
+                _vertexCount = mesh.Vertices.Length;
+                _indexCount = mesh.Indices.Length;
 
-            GL.VertexAttribPointer(
-                index: 0, 
-                size: 3, 
-                type: VertexAttribPointerType.Float, 
-                normalized: false, 
-                stride: 32, 
-                offset: 0);
-            GL.EnableVertexAttribArray(index: 0);
+                GL.BufferData(BufferTarget.ArrayBuffer, size: mesh.Vertices.Length * 32, mesh.Vertices, BufferUsageHint.DynamicDraw);
 
-            GL.VertexAttribPointer(
-                index: 1,
-                size: 3,
-                type: VertexAttribPointerType.Float,
-                normalized: false,
-                stride: 32,
-                offset: 12);
-            GL.EnableVertexAttribArray(index: 1);
+                GL.BindBuffer(BufferTarget.ElementArrayBuffer, _elementBufferObject);
+                GL.BufferData(BufferTarget.ElementArrayBuffer, size: mesh.Indices.Length * sizeof(uint), mesh.Indices, BufferUsageHint.StaticDraw);
+
+                GL.VertexAttribPointer(
+                    index: 0,
+                    size: 3,
+                    type: VertexAttribPointerType.Float,
+                    normalized: false,
+                    stride: 32,
+                    offset: 0);
+                GL.EnableVertexAttribArray(index: 0);
+
+                GL.VertexAttribPointer(
+                    index: 1,
+                    size: 3,
+                    type: VertexAttribPointerType.Float,
+                    normalized: false,
+                    stride: 32,
+                    offset: 12);
+                GL.EnableVertexAttribArray(index: 1);
+            }
+            else
+            {
+                GL.BufferSubData(BufferTarget.ArrayBuffer, offset: IntPtr.Zero, size: mesh.Vertices.Length * 32, data: mesh.Vertices);
+            }
 
             GL.BindVertexArray(0);
         }

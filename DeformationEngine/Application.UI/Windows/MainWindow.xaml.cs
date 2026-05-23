@@ -138,6 +138,14 @@ namespace Application.UI.Windows
             }
         }
 
+        private void ResetDeformations_OnClick(object sender, RoutedEventArgs e)
+        {
+            ViewModel.Deformers.TwistAngle = 0f;
+            ViewModel.Deformers.BendAngle = 0f;
+            ViewModel.Deformers.TwistPivot = 0.5f;
+            ViewModel.Deformers.BendPivot = 0.5f;
+        }
+
         #endregion
     }
 }

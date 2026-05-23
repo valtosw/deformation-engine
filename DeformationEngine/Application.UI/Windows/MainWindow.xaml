@@ -19,9 +19,7 @@
                     Margin="5">
             <Button Content="Load Object" Click="LoadObject_OnClick"/>
             <controls:ParameterPanel/>
-            <Button Content="Apply Deformation"/>
-            <Separator Margin="10"/>
-            <Button Content="About"/>
+            <Button Content="Reset Deformations" Click="ResetDeformations_OnClick"/>
         </StackPanel>
 
         <Border Grid.Column="1"

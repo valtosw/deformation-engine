@@ -9,7 +9,7 @@ using System.IO;
 
 namespace Application.UI.ViewModels
 {
-    public sealed class MainViewModel
+    public sealed class MainViewModel : ViewModelBase
     {
         #region Fields
 
@@ -36,6 +36,7 @@ namespace Application.UI.ViewModels
 
         public ControllerEngine Engine { get; }
         public ICameraSystem CameraSystem { get; }
+        public DeformerViewModel Deformers { get; } = new();
 
         #endregion
 
@@ -75,6 +76,11 @@ namespace Application.UI.ViewModels
             }
 
             _activeMeshNode = new MeshNode { Mesh = mesh };
+
+            _activeMeshNode.AddDeformer(Deformers.TwistDeformer);
+            _activeMeshNode.AddDeformer(Deformers.BendDeformer);
+            Deformers.ActiveMeshNode = _activeMeshNode;
+
             Engine.RootNode.AddChild(_activeMeshNode);
 
             CameraSystem.TargetSphere = BoundingSphere.FromAxisAlignedBoundingBox(_activeMeshNode.BoundingBox);
