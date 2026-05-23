@@ -138,6 +138,11 @@ namespace Application.UI.Windows
             }
         }
 
+        private void BakeChanges_OnClick(object sender, RoutedEventArgs e)
+        {
+            ViewModel.BakeTransformations();
+        }
+
         private void ResetDeformations_OnClick(object sender, RoutedEventArgs e)
         {
             ViewModel.Deformers.TwistAngle = 0f;

@@ -24,6 +24,8 @@ namespace Deformation.Scene.Nodes
 
         #region Properties
 
+        public IReadOnlyList<SceneNode> Children => _children;
+
         public SceneNode? Parent
         {
             get => _parent;
@@ -122,6 +124,8 @@ namespace Deformation.Scene.Nodes
             }
         }
 
+        public bool IsVisible { get; set; } = true;    
+
         protected virtual AxisAlignedBoundingBox? LocalBoundingBox => null;
 
         #endregion
@@ -146,6 +150,11 @@ namespace Deformation.Scene.Nodes
 
         public virtual void OnRendering(IRenderingContext renderingContext)
         {
+            if (!IsVisible)
+            {
+                return;
+            }
+
             renderingContext.SetMatrix("model", WorldTransform);
 
             foreach (var child in _children)

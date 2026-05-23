@@ -1,5 +1,6 @@
 ﻿using Deformation.Abstractions.Geometry;
 using Deformation.Modifiers.Abstractions;
+using OpenTK.Mathematics;
 using Rendering.Abstractions;
 
 namespace Deformation.Scene.Nodes
@@ -18,6 +19,11 @@ namespace Deformation.Scene.Nodes
         #endregion
 
         #region Properties
+
+        public Vector3 Color { get; set; } = new Vector3(0.6f, 0.6f, 0.6f);
+
+        public bool IgnoreDepth { get; set; }
+        public bool ForceSolid { get; set; }
 
         public Mesh? Mesh
         {
@@ -46,6 +52,8 @@ namespace Deformation.Scene.Nodes
                 ApplyDeformers();
             }
         }
+
+        public Mesh? DeformedMesh => _deformedMesh;
 
         protected override AxisAlignedBoundingBox? LocalBoundingBox
         {
@@ -92,8 +100,14 @@ namespace Deformation.Scene.Nodes
 
         public override void OnRendering(IRenderingContext renderingContext)
         {
+            if (!IsVisible)
+            {
+                return;
+            }
+
             if (_deformedMesh is null)
             {
+                base.OnRendering(renderingContext);
                 return;
             }
 
@@ -108,8 +122,19 @@ namespace Deformation.Scene.Nodes
                 _isBufferDirty = false;
             }
 
+            if (ForceSolid)
+            {
+                renderingContext.SetWireframeOverride(false);
+            }
+
+            renderingContext.SetVector("objectColor", Color);
             renderingContext.SetMatrix("model", WorldTransform);
-            renderingContext.DrawBuffer(_bufferId.Value);
+            renderingContext.DrawBuffer(_bufferId.Value, IgnoreDepth);
+
+            if (ForceSolid)
+            {
+                renderingContext.SetWireframeOverride(null);
+            }
 
             base.OnRendering(renderingContext);
         }

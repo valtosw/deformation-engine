@@ -11,9 +11,10 @@ namespace Rendering.Abstractions
 
         void SetMatrix(string name, Matrix4 matrix);
         void SetVector(string name, Vector3 vector);
+        void SetWireframeOverride(bool? isWireframe);
 
         int CreateBuffer(Mesh mesh);
-        void DrawBuffer(int bufferId);
+        void DrawBuffer(int bufferId, bool ignoreDepth);
         void DeleteBuffer(int bufferId);
         void UpdateBuffer(int bufferId, Mesh mesh);
     }

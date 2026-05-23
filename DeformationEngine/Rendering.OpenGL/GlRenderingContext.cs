@@ -39,10 +39,8 @@ namespace Rendering.OpenGL
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             GL.Enable(EnableCap.DepthTest);
 
-            GL.PolygonMode(TriangleFace.FrontAndBack, IsWireframeEnabled ? PolygonMode.Line : PolygonMode.Fill);
-
+            SetWireframeOverride(null);
             shader.Use();
-            shader.SetBool("isWireframe", IsWireframeEnabled);
         }
 
         public void SetMatrix(string name, Matrix4 matrix)
@@ -53,6 +51,13 @@ namespace Rendering.OpenGL
         public void SetVector(string name, Vector3 vector)
         {
             shader.SetVector3(name, vector);
+        }
+
+        public void SetWireframeOverride(bool? isWireframe)
+        {
+            var enableWireframe = isWireframe ?? IsWireframeEnabled;
+            GL.PolygonMode(TriangleFace.FrontAndBack, enableWireframe ? PolygonMode.Line : PolygonMode.Fill);
+            shader.SetBool("isWireframe", enableWireframe);
         }
 
         public int CreateBuffer(Mesh mesh)
@@ -75,9 +80,19 @@ namespace Rendering.OpenGL
             _buffers.Remove(bufferId);
         }
 
-        public void DrawBuffer(int bufferId)
+        public void DrawBuffer(int bufferId, bool ignoreDepth)
         {
+            if (ignoreDepth)
+            {
+                GL.Disable(EnableCap.DepthTest);
+            }
+
             _buffers[bufferId].Draw();
+
+            if (ignoreDepth)
+            {
+                GL.Enable(EnableCap.DepthTest);
+            }
         }
 
         public void UpdateBuffer(int bufferId, Mesh mesh)

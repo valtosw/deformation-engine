@@ -19,7 +19,8 @@
                     Margin="5">
             <Button Content="Load Object" Click="LoadObject_OnClick"/>
             <controls:ParameterPanel/>
-            <Button Content="Reset Deformations" Click="ResetDeformations_OnClick"/>
+            <Button Content="Bake Transformations" Click="BakeChanges_OnClick" Foreground="{StaticResource AccentBrush}" FontWeight="Bold"/>
+            <Button Content="Reset Parameters" Click="ResetDeformations_OnClick"/>
         </StackPanel>
 
         <Border Grid.Column="1"

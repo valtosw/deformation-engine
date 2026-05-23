@@ -6,73 +6,101 @@
             BorderBrush="{StaticResource BorderBrush}"
             BorderThickness="1"
             Padding="10">
-        <StackPanel DataContext="{Binding Deformers}">
-            <TextBlock Text="Deformation Parameters"
-                       FontWeight="Bold"
-                       Margin="0,0,0,10"/>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
 
-            <CheckBox Content="Prevent Self-Intersections" 
-                      IsChecked="{Binding PreventSelfIntersection, Mode=TwoWay}"
-                      Foreground="{StaticResource TextBrush}"
-                      Margin="0,0,0,15"/>
+                <TextBlock Text="Basic Transformation"
+                           FontWeight="Bold"
+                           Margin="0,0,0,10"/>
 
-            <TextBlock Text="Twist Deformer" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}"/>
+                <StackPanel DataContext="{Binding Gizmo}">
+                    <CheckBox Content="Enable Gizmo" 
+                              IsChecked="{Binding IsEnabled, Mode=TwoWay}"
+                              Foreground="{StaticResource TextBrush}"
+                              Margin="0,0,0,10"/>
 
-            <Grid Margin="0,5,0,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0">
-                    <TextBlock Text="Axis:" Margin="4,0,0,0"/>
-                    <ComboBox ItemsSource="{Binding AvailableAxes}" 
-                              SelectedItem="{Binding TwistAxis, Mode=TwoWay}" 
-                              Margin="4"/>
+                    <Grid Margin="0,0,0,15" IsEnabled="{Binding IsEnabled}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Mode:" Margin="4,0,10,0" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Column="1" ItemsSource="{Binding AvailableModes}" 
+                                  SelectedItem="{Binding Mode, Mode=TwoWay}" />
+                    </Grid>
                 </StackPanel>
-            </Grid>
 
-            <TextBlock Text="Pivot Point (0.0 to 1.0):" Margin="0,5,0,0"/>
-            <Slider Minimum="0" Maximum="1" 
-                    Value="{Binding TwistPivot, Mode=TwoWay}" 
-                    TickFrequency="0.1" LargeChange="0.2"/>
+                <Separator Margin="0,5,0,15" Background="{StaticResource BorderBrush}"/>
 
-            <TextBlock Text="Angle:" Margin="0,5,0,0"/>
-            <Slider Minimum="-12.56" Maximum="12.56" 
-                    Value="{Binding TwistAngle, Mode=TwoWay}" 
-                    TickFrequency="0.1" LargeChange="0.5"/>
+                <TextBlock Text="Deformation Parameters"
+                           FontWeight="Bold"
+                           Margin="0,0,0,10"/>
 
-            <Separator Margin="0,15,0,15" Background="{StaticResource BorderBrush}"/>
+                <StackPanel DataContext="{Binding Deformers}">
+                    <CheckBox Content="Prevent Self-Intersections" 
+                              IsChecked="{Binding PreventSelfIntersection, Mode=TwoWay}"
+                              Foreground="{StaticResource TextBrush}"
+                              Margin="0,0,0,15"/>
 
-            <TextBlock Text="Bend Deformer" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}"/>
+                    <TextBlock Text="Twist Deformer" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}"/>
 
-            <Grid Margin="0,5,0,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0">
-                    <TextBlock Text="Length Axis:" Margin="4,0,0,0"/>
-                    <ComboBox ItemsSource="{Binding AvailableAxes}" 
-                              SelectedItem="{Binding BendPrimaryAxis, Mode=TwoWay}" 
-                              Margin="4"/>
+                    <Grid Margin="0,5,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Axis:" Margin="4,0,0,0"/>
+                            <ComboBox ItemsSource="{Binding AvailableAxes}" 
+                                      SelectedItem="{Binding TwistAxis, Mode=TwoWay}" 
+                                      Margin="4"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Text="Pivot Point (0.0 to 1.0):" Margin="0,5,0,0"/>
+                    <Slider Minimum="0" Maximum="1" 
+                            Value="{Binding TwistPivot, Mode=TwoWay}" 
+                            TickFrequency="0.1" LargeChange="0.2"/>
+
+                    <TextBlock Text="Angle:" Margin="0,5,0,0"/>
+                    <Slider Minimum="-12.56" Maximum="12.56" 
+                            Value="{Binding TwistAngle, Mode=TwoWay}" 
+                            TickFrequency="0.1" LargeChange="0.5"/>
+
+                    <Separator Margin="0,15,0,15" Background="{StaticResource BorderBrush}"/>
+
+                    <TextBlock Text="Bend Deformer" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}"/>
+
+                    <Grid Margin="0,5,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Length Axis:" Margin="4,0,0,0"/>
+                            <ComboBox ItemsSource="{Binding AvailableAxes}" 
+                                      SelectedItem="{Binding BendPrimaryAxis, Mode=TwoWay}" 
+                                      Margin="4"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Bend Towards:" Margin="4,0,0,0"/>
+                            <ComboBox ItemsSource="{Binding AvailableAxes}" 
+                                      SelectedItem="{Binding BendAxis, Mode=TwoWay}" 
+                                      Margin="4"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Text="Pivot Point (0.0 to 1.0):" Margin="0,5,0,0"/>
+                    <Slider Minimum="0" Maximum="1" 
+                            Value="{Binding BendPivot, Mode=TwoWay}" 
+                            TickFrequency="0.1" LargeChange="0.2"/>
+
+                    <TextBlock Text="Angle:" Margin="0,5,0,0"/>
+                    <Slider Minimum="-6.28" Maximum="6.28" 
+                            Value="{Binding BendAngle, Mode=TwoWay}" 
+                            TickFrequency="0.1" LargeChange="0.5"/>
                 </StackPanel>
-                <StackPanel Grid.Column="1">
-                    <TextBlock Text="Bend Towards:" Margin="4,0,0,0"/>
-                    <ComboBox ItemsSource="{Binding AvailableAxes}" 
-                              SelectedItem="{Binding BendAxis, Mode=TwoWay}" 
-                              Margin="4"/>
-                </StackPanel>
-            </Grid>
-
-            <TextBlock Text="Pivot Point (0.0 to 1.0):" Margin="0,5,0,0"/>
-            <Slider Minimum="0" Maximum="1" 
-                    Value="{Binding BendPivot, Mode=TwoWay}" 
-                    TickFrequency="0.1" LargeChange="0.2"/>
-
-            <TextBlock Text="Angle:" Margin="0,5,0,0"/>
-            <Slider Minimum="-6.28" Maximum="6.28" 
-                    Value="{Binding BendAngle, Mode=TwoWay}" 
-                    TickFrequency="0.1" LargeChange="0.5"/>
-        </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
     </Border>
 </UserControl>
