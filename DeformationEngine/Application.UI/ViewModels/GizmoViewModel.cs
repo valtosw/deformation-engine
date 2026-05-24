@@ -1,52 +1,32 @@
-﻿using System;
-using System.Collections.Generic;
-using Deformation.Abstractions.Enums;
+﻿using Deformation.Abstractions.Enums;
 using Deformation.Interaction;
+using Deformation.Scene.Abstractions;
+using System;
+using System.Collections.Generic;
 
 namespace Application.UI.ViewModels
 {
-    public sealed class GizmoViewModel(GizmoController controller) : ViewModelBase
+    public sealed class GizmoViewModel(IGizmoSystem gizmoSystem) : ViewModelBase
     {
-
-        #region Constructors
-
-        #endregion
-
         #region Properties
 
-        public bool IsEnabled
-        {
-            get
-            {
-                return controller.IsEnabled;
-            }
-            set
-            {
-                if (controller.IsEnabled != value)
-                {
-                    controller.IsEnabled = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
+        public static IEnumerable<GizmoMode> AvailableModes => Enum.GetValues<GizmoMode>();
 
         public GizmoMode Mode
         {
             get
             {
-                return controller.Mode;
+                return gizmoSystem.Mode;
             }
             set
             {
-                if (controller.Mode != value)
+                if (gizmoSystem.Mode != value)
                 {
-                    controller.Mode = value;
+                    gizmoSystem.Mode = value;
                     OnPropertyChanged();
                 }
             }
         }
-
-        public static IEnumerable<GizmoMode> AvailableModes => Enum.GetValues<GizmoMode>();
 
         #endregion
     }

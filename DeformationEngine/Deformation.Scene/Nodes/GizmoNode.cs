@@ -1,4 +1,5 @@
-﻿using Deformation.Abstractions.Enums;
+﻿using Deformation.Abstractions.Constants;
+using Deformation.Abstractions.Enums;
 using Deformation.Abstractions.Geometry;
 using OpenTK.Mathematics;
 
@@ -34,8 +35,8 @@ namespace Deformation.Scene.Nodes
         public void SetMode(GizmoMode mode)
         {
             _translateGroup.IsVisible = mode == GizmoMode.Translate;
-            _rotateGroup.IsVisible = mode == GizmoMode.Rotate;
-            _scaleGroup.IsVisible = mode == GizmoMode.Scale;
+            _rotateGroup.IsVisible    = mode == GizmoMode.Rotate;
+            _scaleGroup.IsVisible     = mode == GizmoMode.Scale;
         }
 
         public MeshNode GetActiveXAxis(GizmoMode mode)
@@ -43,9 +44,9 @@ namespace Deformation.Scene.Nodes
             return mode switch
             {
                 GizmoMode.Translate => (MeshNode)_translateGroup.Children[0],
-                GizmoMode.Rotate => (MeshNode)_rotateGroup.Children[0],
-                GizmoMode.Scale => (MeshNode)_scaleGroup.Children[0],
-                _ => (MeshNode)_translateGroup.Children[0]
+                GizmoMode.Rotate    => (MeshNode)_rotateGroup.Children[0],
+                GizmoMode.Scale     => (MeshNode)_scaleGroup.Children[0],
+                _                   => (MeshNode)_translateGroup.Children[0]
             };
         }
 
@@ -54,9 +55,9 @@ namespace Deformation.Scene.Nodes
             return mode switch
             {
                 GizmoMode.Translate => (MeshNode)_translateGroup.Children[1],
-                GizmoMode.Rotate => (MeshNode)_rotateGroup.Children[1],
-                GizmoMode.Scale => (MeshNode)_scaleGroup.Children[1],
-                _ => (MeshNode)_translateGroup.Children[1]
+                GizmoMode.Rotate    => (MeshNode)_rotateGroup.Children[1],
+                GizmoMode.Scale     => (MeshNode)_scaleGroup.Children[1],
+                _                   => (MeshNode)_translateGroup.Children[1]
             };
         }
 
@@ -65,9 +66,9 @@ namespace Deformation.Scene.Nodes
             return mode switch
             {
                 GizmoMode.Translate => (MeshNode)_translateGroup.Children[2],
-                GizmoMode.Rotate => (MeshNode)_rotateGroup.Children[2],
-                GizmoMode.Scale => (MeshNode)_scaleGroup.Children[2],
-                _ => (MeshNode)_translateGroup.Children[2]
+                GizmoMode.Rotate    => (MeshNode)_rotateGroup.Children[2],
+                GizmoMode.Scale     => (MeshNode)_scaleGroup.Children[2],
+                _                   => (MeshNode)_translateGroup.Children[2]
             };
         }
 
@@ -81,18 +82,18 @@ namespace Deformation.Scene.Nodes
             var cone = MeshFactory.CreateCone(0.12f, 0.3f, 16, new Vector3(0, 1.0f, 0));
             var arrowMesh = MeshFactory.Combine(cylinder, cone);
 
-            _translateGroup.AddChild(CreateGizmoPart(arrowMesh, new Vector3(1, 0.2f, 0.2f), Quaternion.FromEulerAngles(0, 0, -MathHelper.PiOver2)));
-            _translateGroup.AddChild(CreateGizmoPart(arrowMesh, new Vector3(0.2f, 1, 0.2f), Quaternion.Identity));
-            _translateGroup.AddChild(CreateGizmoPart(arrowMesh, new Vector3(0.2f, 0.5f, 1), Quaternion.FromEulerAngles(MathHelper.PiOver2, 0, 0)));
+            _translateGroup.AddChild(CreateGizmoPart(arrowMesh, ColorConstants.XAxisColor, Quaternion.FromEulerAngles(0, 0, -MathHelper.PiOver2)));
+            _translateGroup.AddChild(CreateGizmoPart(arrowMesh, ColorConstants.YAxisColor, Quaternion.Identity));
+            _translateGroup.AddChild(CreateGizmoPart(arrowMesh, ColorConstants.ZAxisColor, Quaternion.FromEulerAngles(MathHelper.PiOver2, 0, 0)));
         }
 
         private void InitializeRotateGroup()
         {
             var torusMesh = MeshFactory.CreateTorus(1.0f, 0.04f, 32, 12);
 
-            _rotateGroup.AddChild(CreateGizmoPart(torusMesh, new Vector3(1, 0.2f, 0.2f), Quaternion.FromEulerAngles(0, 0, MathHelper.PiOver2)));
-            _rotateGroup.AddChild(CreateGizmoPart(torusMesh, new Vector3(0.2f, 1, 0.2f), Quaternion.Identity));
-            _rotateGroup.AddChild(CreateGizmoPart(torusMesh, new Vector3(0.2f, 0.5f, 1), Quaternion.FromEulerAngles(MathHelper.PiOver2, 0, 0)));
+            _rotateGroup.AddChild(CreateGizmoPart(torusMesh, ColorConstants.XAxisColor, Quaternion.FromEulerAngles(0, 0, MathHelper.PiOver2)));
+            _rotateGroup.AddChild(CreateGizmoPart(torusMesh, ColorConstants.YAxisColor, Quaternion.Identity));
+            _rotateGroup.AddChild(CreateGizmoPart(torusMesh, ColorConstants.ZAxisColor, Quaternion.FromEulerAngles(MathHelper.PiOver2, 0, 0)));
         }
 
         private void InitializeScaleGroup()
@@ -101,9 +102,9 @@ namespace Deformation.Scene.Nodes
             var box = MeshFactory.CreateBox(new Vector3(0.2f), new Vector3(0, 1.1f, 0));
             var scaleHandleMesh = MeshFactory.Combine(cylinder, box);
 
-            _scaleGroup.AddChild(CreateGizmoPart(scaleHandleMesh, new Vector3(1, 0.2f, 0.2f), Quaternion.FromEulerAngles(0, 0, -MathHelper.PiOver2)));
-            _scaleGroup.AddChild(CreateGizmoPart(scaleHandleMesh, new Vector3(0.2f, 1, 0.2f), Quaternion.Identity));
-            _scaleGroup.AddChild(CreateGizmoPart(scaleHandleMesh, new Vector3(0.2f, 0.5f, 1), Quaternion.FromEulerAngles(MathHelper.PiOver2, 0, 0)));
+            _scaleGroup.AddChild(CreateGizmoPart(scaleHandleMesh, ColorConstants.XAxisColor, Quaternion.FromEulerAngles(0, 0, -MathHelper.PiOver2)));
+            _scaleGroup.AddChild(CreateGizmoPart(scaleHandleMesh, ColorConstants.YAxisColor, Quaternion.Identity));
+            _scaleGroup.AddChild(CreateGizmoPart(scaleHandleMesh, ColorConstants.ZAxisColor, Quaternion.FromEulerAngles(MathHelper.PiOver2, 0, 0)));
         }
 
         private static MeshNode CreateGizmoPart(Mesh mesh, Vector3 color, Quaternion rotation)

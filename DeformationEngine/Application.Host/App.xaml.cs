@@ -16,15 +16,16 @@ namespace Application.Host
     {
         private IServiceProvider? _serviceProvider;
 
-        protected override void OnStartup(StartupEventArgs e)
+        protected override void OnStartup(StartupEventArgs eventArguments)
         {
             try
             {
-                base.OnStartup(e);
+                base.OnStartup(eventArguments);
 
                 var services = new ServiceCollection();
 
                 services.AddSingleton<ICameraSystem, CameraSystem>();
+                services.AddSingleton<IGizmoSystem, GizmoSystem>();
                 services.AddSingleton<ISceneRenderer, SceneRenderer>();
                 services.AddSingleton<ControllerEngine>();
 
@@ -40,21 +41,21 @@ namespace Application.Host
                 var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
                 mainWindow.Show();
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                MessageBox.Show($"Application failed to start.\n\nError: {ex.Message}", "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Application failed to start.\n\nError: {exception.Message}", "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Shutdown();
             }
         }
 
-        protected override void OnExit(ExitEventArgs e)
+        protected override void OnExit(ExitEventArgs eventArguments)
         {
             if (_serviceProvider is IDisposable disposable)
             {
                 disposable.Dispose();
             }
 
-            base.OnExit(e);
+            base.OnExit(eventArguments);
         }
     }
 }

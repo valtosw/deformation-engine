@@ -8,69 +8,35 @@ namespace Deformation.Abstractions.Extensions
 {
     public static class RayExtensions
     {
-        #region Public Logic
-
         public static bool Intersects(this Ray ray, AxisAlignedBoundingBox box, out float distance)
         {
             distance = 0f;
 
-            var tmin = (box.Min.X - ray.Origin.X) / ray.Direction.X;
-            var tmax = (box.Max.X - ray.Origin.X) / ray.Direction.X;
+            var intersection1 = (box.Min.X - ray.Origin.X) / ray.Direction.X;
+            var intersection2 = (box.Max.X - ray.Origin.X) / ray.Direction.X;
 
-            if (tmin > tmax)
+            var minimumDistance = MathF.Min(intersection1, intersection2);
+            var maximumDistance = MathF.Max(intersection1, intersection2);
+
+            intersection1 = (box.Min.Y - ray.Origin.Y) / ray.Direction.Y;
+            intersection2 = (box.Max.Y - ray.Origin.Y) / ray.Direction.Y;
+
+            minimumDistance = MathF.Max(minimumDistance, MathF.Min(intersection1, intersection2));
+            maximumDistance = MathF.Min(maximumDistance, MathF.Max(intersection1, intersection2));
+
+            intersection1 = (box.Min.Z - ray.Origin.Z) / ray.Direction.Z;
+            intersection2 = (box.Max.Z - ray.Origin.Z) / ray.Direction.Z;
+
+            minimumDistance = MathF.Max(minimumDistance, MathF.Min(intersection1, intersection2));
+            maximumDistance = MathF.Min(maximumDistance, MathF.Max(intersection1, intersection2));
+
+            if (maximumDistance >= minimumDistance && maximumDistance >= MathConstants.ZeroTolerance)
             {
-                (tmax, tmin) = (tmin, tmax);
+                distance = minimumDistance >= MathConstants.ZeroTolerance ? minimumDistance : maximumDistance;
+                return true;
             }
 
-            var tymin = (box.Min.Y - ray.Origin.Y) / ray.Direction.Y;
-            var tymax = (box.Max.Y - ray.Origin.Y) / ray.Direction.Y;
-
-            if (tymin > tymax)
-            {
-                (tymax, tymin) = (tymin, tymax);
-            }
-
-            if (tmin > tymax || tymin > tmax)
-            {
-                return false;
-            }
-
-            if (tymin > tmin)
-            {
-                tmin = tymin;
-            }
-
-            if (tymax < tmax)
-            {
-                tmax = tymax;
-            }
-
-            var tzmin = (box.Min.Z - ray.Origin.Z) / ray.Direction.Z;
-            var tzmax = (box.Max.Z - ray.Origin.Z) / ray.Direction.Z;
-
-            if (tzmin > tzmax)
-            {
-                (tzmax, tzmin) = (tzmin, tzmax);
-            }
-
-            if (tmin > tzmax || tzmin > tmax)
-            {
-                return false;
-            }
-
-            if (tzmin > tmin)
-            {
-                tmin = tzmin;
-            }
-
-            if (tzmax < tmax)
-            {
-                tmax = tzmax;
-            }
-
-            distance = tmin;
-
-            return distance >= 0f;
+            return false;
         }
 
         public static Ray Transformed(this Ray ray, Matrix4 matrix)
@@ -90,16 +56,14 @@ namespace Deformation.Abstractions.Extensions
                 return null;
             }
 
-            var parameter = Vector3.Dot(plane.Point - ray.Origin, plane.Normal) / denominator;
+            var intersectionDistance = Vector3.Dot(plane.Point - ray.Origin, plane.Normal) / denominator;
 
-            if (parameter < 0f)
+            if (intersectionDistance < MathConstants.ZeroTolerance)
             {
                 return null;
             }
 
-            return ray.Origin + ray.Direction * parameter;
+            return ray.Origin + ray.Direction * intersectionDistance;
         }
-
-        #endregion
     }
 }

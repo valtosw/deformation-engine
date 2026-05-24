@@ -1,4 +1,5 @@
-﻿using Deformation.Abstractions.Geometry;
+﻿using Deformation.Abstractions.Constants;
+using Deformation.Abstractions.Geometry;
 using Deformation.Modifiers.Abstractions;
 using OpenTK.Mathematics;
 using Rendering.Abstractions;
@@ -20,7 +21,7 @@ namespace Deformation.Scene.Nodes
 
         #region Properties
 
-        public Vector3 Color { get; set; } = new Vector3(0.6f, 0.6f, 0.6f);
+        public Vector3 Color { get; set; } = ColorConstants.DefaultObjectColor;
 
         public bool IgnoreDepth { get; set; }
         public bool ForceSolid { get; set; }
@@ -39,21 +40,19 @@ namespace Deformation.Scene.Nodes
                 }
 
                 _originalMesh = value;
-
-                if (_originalMesh is not null)
-                {
-                    _deformedMesh = CloneMesh(_originalMesh);
-                }
-                else
-                {
-                    _deformedMesh = null;
-                }
+                _deformedMesh = _originalMesh is not null ? CloneMesh(_originalMesh) : null;
 
                 ApplyDeformers();
             }
         }
 
-        public Mesh? DeformedMesh => _deformedMesh;
+        public Mesh? DeformedMesh
+        {
+            get
+            {
+                return _deformedMesh;
+            }
+        }
 
         protected override AxisAlignedBoundingBox? LocalBoundingBox
         {
@@ -92,7 +91,10 @@ namespace Deformation.Scene.Nodes
 
         public void NotifyGeometryChanged()
         {
-            _deformedMesh?.LocalBoundingBox = AxisAlignedBoundingBox.FromPoints(_deformedMesh.Vertices.Select(vertex => vertex.Position));
+            if (_deformedMesh is not null)
+            {
+                _deformedMesh.LocalBoundingBox = AxisAlignedBoundingBox.FromPoints(_deformedMesh.Vertices.Select(vertex => vertex.Position));
+            }
 
             _isBufferDirty = true;
             InvalidateBoundingBox();

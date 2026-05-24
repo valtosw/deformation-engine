@@ -22,6 +22,12 @@ namespace Application.UI.Windows
             ViewModel = viewModel;
             DataContext = viewModel;
 
+            ViewModel.RequestConfirmation = message =>
+            {
+                var result = MessageBox.Show(this, message, "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                return result == MessageBoxResult.Yes;
+            };
+
             GlRenderingControl.Start(new GLWpfControlSettings
             {
                 MajorVersion = 3,
@@ -39,9 +45,9 @@ namespace Application.UI.Windows
 
         #region Private Logic
 
-        protected override void OnClosed(EventArgs e)
+        protected override void OnClosed(EventArgs eventArguments)
         {
-            base.OnClosed(e);
+            base.OnClosed(eventArguments);
             GlRenderingControl.Dispose();
         }
 
@@ -59,23 +65,23 @@ namespace Application.UI.Windows
             ViewModel.Render((float)delta.TotalSeconds);
         }
 
-        private void GlRenderingControl_OnSizeChanged(object sender, SizeChangedEventArgs e)
+        private void GlRenderingControl_OnSizeChanged(object sender, SizeChangedEventArgs sizeChangedEventArgs)
         {
-            ViewModel.Resize((int)e.NewSize.Width, (int)e.NewSize.Height);
+            ViewModel.Resize((int)sizeChangedEventArgs.NewSize.Width, (int)sizeChangedEventArgs.NewSize.Height);
         }
 
-        private void GlRenderingControl_OnMouseMove(object sender, MouseEventArgs e)
+        private void GlRenderingControl_OnMouseMove(object sender, MouseEventArgs mouseEventArgs)
         {
-            var position = e.GetPosition(GlRenderingControl);
+            var position = mouseEventArgs.GetPosition(GlRenderingControl);
             ViewModel.ProcessInput(new MouseMoveEvent(new Vector2((float)position.X, (float)position.Y)));
         }
 
-        private void GlRenderingControl_OnMouseDown(object sender, MouseButtonEventArgs e)
+        private void GlRenderingControl_OnMouseDown(object sender, MouseButtonEventArgs mouseButtonEventArgs)
         {
             GlRenderingControl.CaptureMouse();
 
-            var position = e.GetPosition(GlRenderingControl);
-            var button = e.ChangedButton.ToEngineMouseButton();
+            var position = mouseButtonEventArgs.GetPosition(GlRenderingControl);
+            var button = mouseButtonEventArgs.ChangedButton.ToEngineMouseButton();
 
             ViewModel.ProcessInput(new MouseClickEvent(
                 Position: new Vector2((float)position.X, (float)position.Y),
@@ -83,15 +89,15 @@ namespace Application.UI.Windows
                 InputType: InputType.Down));
         }
 
-        private void GlRenderingControl_OnMouseUp(object sender, MouseButtonEventArgs e)
+        private void GlRenderingControl_OnMouseUp(object sender, MouseButtonEventArgs mouseButtonEventArgs)
         {
             if (GlRenderingControl.IsMouseCaptured)
             {
                 GlRenderingControl.ReleaseMouseCapture();
             }
 
-            var position = e.GetPosition(GlRenderingControl);
-            var button = e.ChangedButton.ToEngineMouseButton();
+            var position = mouseButtonEventArgs.GetPosition(GlRenderingControl);
+            var button = mouseButtonEventArgs.ChangedButton.ToEngineMouseButton();
 
             ViewModel.ProcessInput(new MouseClickEvent(
                 Position: new Vector2((float)position.X, (float)position.Y),
@@ -99,15 +105,15 @@ namespace Application.UI.Windows
                 InputType: InputType.Up));
         }
 
-        private void GlRenderingControl_OnMouseWheel(object sender, MouseWheelEventArgs e)
+        private void GlRenderingControl_OnMouseWheel(object sender, MouseWheelEventArgs mouseWheelEventArgs)
         {
-            var position = e.GetPosition(GlRenderingControl);
-            ViewModel.ProcessInput(new MouseWheelEvent(new Vector2((float)position.X, (float)position.Y), e.Delta));
+            var position = mouseWheelEventArgs.GetPosition(GlRenderingControl);
+            ViewModel.ProcessInput(new MouseWheelEvent(new Vector2((float)position.X, (float)position.Y), mouseWheelEventArgs.Delta));
         }
 
-        private void Window_OnKeyDown(object sender, KeyEventArgs e)
+        private void Window_OnKeyDown(object sender, KeyEventArgs keyEventArgs)
         {
-            var key = e.Key.ToEngineKey();
+            var key = keyEventArgs.Key.ToEngineKey();
 
             if (key != Key.Unknown)
             {
@@ -115,7 +121,7 @@ namespace Application.UI.Windows
             }
         }
 
-        private void LoadObject_OnClick(object sender, RoutedEventArgs e)
+        private void LoadObject_OnClick(object sender, RoutedEventArgs routedEventArgs)
         {
             var openFileDialog = new OpenFileDialog
             {
@@ -132,23 +138,10 @@ namespace Application.UI.Windows
             {
                 ViewModel.LoadMesh(openFileDialog.FileName);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                MessageBox.Show($"Failed to load model:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Failed to load model:\n{exception.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-        }
-
-        private void BakeChanges_OnClick(object sender, RoutedEventArgs e)
-        {
-            ViewModel.BakeTransformations();
-        }
-
-        private void ResetDeformations_OnClick(object sender, RoutedEventArgs e)
-        {
-            ViewModel.Deformers.TwistAngle = 0f;
-            ViewModel.Deformers.BendAngle = 0f;
-            ViewModel.Deformers.TwistPivot = 0.5f;
-            ViewModel.Deformers.BendPivot = 0.5f;
         }
 
         #endregion

@@ -1,4 +1,6 @@
-﻿using Deformation.Abstractions.Extensions;
+﻿using Deformation.Abstractions.Constants;
+using Deformation.Abstractions.Enums;
+using Deformation.Abstractions.Extensions;
 using Deformation.Abstractions.Geometry;
 using Deformation.Interaction;
 using Deformation.Interaction.Input;
@@ -8,6 +10,7 @@ using Deformation.Scene.Nodes;
 using OpenTK.Mathematics;
 using Rendering.Abstractions;
 using System.IO;
+using System.Windows;
 
 namespace Application.UI.ViewModels
 {
@@ -16,27 +19,28 @@ namespace Application.UI.ViewModels
         #region Fields
 
         private readonly IMeshImporterFactory _meshImporterFactory;
-        private readonly GizmoController _gizmoController;
         private MeshNode? _activeMeshNode;
+        private bool _hasModel;
+        private DeformationMode _selectedMode = DeformationMode.Basic;
 
         #endregion
 
         #region Constructors
 
-        public MainViewModel(ControllerEngine engine, ICameraSystem cameraSystem, IMeshImporterFactory meshImporterFactory)
+        public MainViewModel(ControllerEngine engine, ICameraSystem cameraSystem, IGizmoSystem gizmoSystem, IMeshImporterFactory meshImporterFactory)
         {
             Engine = engine;
             CameraSystem = cameraSystem;
+            GizmoSystem = gizmoSystem;
             _meshImporterFactory = meshImporterFactory;
 
-            _gizmoController = new GizmoController(CameraSystem);
-            Gizmo = new GizmoViewModel(_gizmoController);
+            Gizmo = new GizmoViewModel(GizmoSystem);
 
             Engine.RegisterController(new CameraKeyboardController(CameraSystem, Engine));
-            Engine.RegisterController(_gizmoController);
+            Engine.RegisterController(new GizmoController(GizmoSystem, CameraSystem));
             Engine.RegisterController(new CameraMouseController(CameraSystem));
 
-            Engine.RootNode.AddChild(_gizmoController.GizmoNode);
+            Engine.RootNode.AddChild(GizmoSystem.GizmoNode);
         }
 
         #endregion
@@ -45,8 +49,93 @@ namespace Application.UI.ViewModels
 
         public ControllerEngine Engine { get; }
         public ICameraSystem CameraSystem { get; }
+        public IGizmoSystem GizmoSystem { get; }
+
         public DeformerViewModel Deformers { get; } = new();
         public GizmoViewModel Gizmo { get; }
+
+        public Func<string, bool>? RequestConfirmation { get; set; }
+
+        public bool HasModel
+        {
+            get
+            {
+                return _hasModel;
+            }
+            private set
+            {
+                if (SetProperty(ref _hasModel, value))
+                {
+                    GizmoSystem.IsEnabled = value && SelectedMode == DeformationMode.Basic;
+                }
+            }
+        }
+
+        public DeformationMode SelectedMode
+        {
+            get
+            {
+                return _selectedMode;
+            }
+            set
+            {
+                if (_selectedMode != value)
+                {
+                    if (HasUnbakedChanges())
+                    {
+                        var shouldProceed = RequestConfirmation?.Invoke("You haven't baked the deformation. The changes won't be applied when you switch the deformation type. Do you wish to proceed?");
+
+                        if (shouldProceed != true)
+                        {
+                            OnPropertyChanged();
+                            return;
+                        }
+
+                        RestoreParameters();
+                    }
+
+                    _selectedMode = value;
+                    GizmoSystem.IsEnabled = _hasModel && _selectedMode == DeformationMode.Basic;
+
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(BasicPanelVisibility));
+                    OnPropertyChanged(nameof(TwistPanelVisibility));
+                    OnPropertyChanged(nameof(BendPanelVisibility));
+                }
+            }
+        }
+
+        public Visibility BasicPanelVisibility
+        {
+            get
+            {
+                return SelectedMode == DeformationMode.Basic ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+
+        public Visibility TwistPanelVisibility
+        {
+            get
+            {
+                return SelectedMode == DeformationMode.Twist ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+
+        public Visibility BendPanelVisibility
+        {
+            get
+            {
+                return SelectedMode == DeformationMode.Bend ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+
+        public static IEnumerable<DeformationMode> AvailableModes
+        {
+            get
+            {
+                return Enum.GetValues<DeformationMode>();
+            }
+        }
 
         #endregion
 
@@ -91,12 +180,31 @@ namespace Application.UI.ViewModels
             _activeMeshNode.AddDeformer(Deformers.BendDeformer);
             Deformers.ActiveMeshNode = _activeMeshNode;
 
-            _gizmoController.TargetNode = _activeMeshNode;
+            GizmoSystem.TargetNode = _activeMeshNode;
 
             Engine.RootNode.AddChild(_activeMeshNode);
 
             CameraSystem.TargetSphere = BoundingSphere.FromAxisAlignedBoundingBox(_activeMeshNode.BoundingBox);
             CameraSystem.ZoomToFit();
+
+            HasModel = true;
+        }
+
+        public void RestoreParameters()
+        {
+            if (_activeMeshNode is null)
+            {
+                return;
+            }
+
+            _activeMeshNode.Translation = Vector3.Zero;
+            _activeMeshNode.Rotation = Quaternion.Identity;
+            _activeMeshNode.Scale = Vector3.One;
+
+            Deformers.TwistAngle = 0f;
+            Deformers.BendAngle = 0f;
+            Deformers.TwistPivot = 0.5f;
+            Deformers.BendPivot = 0.5f;
         }
 
         public void BakeTransformations()
@@ -134,12 +242,43 @@ namespace Application.UI.ViewModels
             _activeMeshNode.Rotation = Quaternion.Identity;
             _activeMeshNode.Scale = Vector3.One;
 
-            Deformers.TwistAngle = 0;
-            Deformers.BendAngle = 0;
+            Deformers.TwistAngle = 0f;
+            Deformers.BendAngle = 0f;
 
             _activeMeshNode.Mesh = bakedMesh;
 
             CameraSystem.TargetSphere = BoundingSphere.FromAxisAlignedBoundingBox(_activeMeshNode.BoundingBox);
+        }
+
+        #endregion
+
+        #region Private Logic
+
+        private bool HasUnbakedChanges()
+        {
+            if (_activeMeshNode is null)
+            {
+                return false;
+            }
+
+            if (SelectedMode == DeformationMode.Basic)
+            {
+                return _activeMeshNode.Translation != Vector3.Zero ||
+                       _activeMeshNode.Rotation != Quaternion.Identity ||
+                       _activeMeshNode.Scale != Vector3.One;
+            }
+
+            if (SelectedMode == DeformationMode.Twist)
+            {
+                return MathF.Abs(Deformers.TwistAngle) > MathConstants.ZeroTolerance;
+            }
+
+            if (SelectedMode == DeformationMode.Bend)
+            {
+                return MathF.Abs(Deformers.BendAngle) > MathConstants.ZeroTolerance;
+            }
+
+            return false;
         }
 
         #endregion
