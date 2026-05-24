@@ -87,7 +87,11 @@ namespace Application.UI.ViewModels
 
                         if (shouldProceed != true)
                         {
-                            OnPropertyChanged();
+                            System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                            {
+                                OnPropertyChanged(nameof(SelectedMode));
+                            }));
+
                             return;
                         }
 

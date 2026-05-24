@@ -8,31 +8,51 @@
     Width="1200"
     Height="800"
     Icon="../Resources/Icons/app.ico"
-    KeyDown="Window_OnKeyDown">
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="280"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
-        <StackPanel Grid.Column="0"
-                    Background="{StaticResource PanelBrush}"
-                    Margin="5">
-            <Button Content="Load Object" Click="LoadObject_OnClick"/>
-            <controls:ParameterPanel DataContext="{Binding}"/>
-        </StackPanel>
+    KeyDown="Window_OnKeyDown"
+    Style="{StaticResource AppWindowStyle}">
+    <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="32"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-        <Border Grid.Column="1"
-                Margin="5"
-                BorderBrush="{StaticResource BorderBrush}"
-                BorderThickness="1">
-            <opentk:GLWpfControl x:Name="GlRenderingControl"
-                                 Ready="GlRenderingControl_OnReady"
-                                 Render="GlRenderingControl_OnRender"
-                                 SizeChanged="GlRenderingControl_OnSizeChanged"
-                                 MouseMove="GlRenderingControl_OnMouseMove"
-                                 MouseDown="GlRenderingControl_OnMouseDown"
-                                 MouseUp="GlRenderingControl_OnMouseUp"
-                                 MouseWheel="GlRenderingControl_OnMouseWheel"/>
-        </Border>
-    </Grid>
+            <Grid Grid.Row="0" Background="{StaticResource PanelBrush}">
+                <TextBlock Text="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}" VerticalAlignment="Center" Margin="10,0,0,0" FontWeight="SemiBold"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Button Content="🗕" Style="{StaticResource CaptionButtonStyle}" Click="Minimize_OnClick"/>
+                    <Button Content="🗖" Style="{StaticResource CaptionButtonStyle}" Click="Maximize_OnClick"/>
+                    <Button Content="✕" Style="{StaticResource CaptionButtonStyle}" Click="Close_OnClick"/>
+                </StackPanel>
+            </Grid>
+
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="280"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0"
+                            Background="{StaticResource PanelBrush}"
+                            Margin="5">
+                    <Button Content="Load Object" Click="LoadObject_OnClick"/>
+                    <controls:ParameterPanel DataContext="{Binding}"/>
+                </StackPanel>
+
+                <Border Grid.Column="1"
+                        Margin="5"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1">
+                    <opentk:GLWpfControl x:Name="GlRenderingControl"
+                                         Ready="GlRenderingControl_OnReady"
+                                         Render="GlRenderingControl_OnRender"
+                                         SizeChanged="GlRenderingControl_OnSizeChanged"
+                                         MouseMove="GlRenderingControl_OnMouseMove"
+                                         MouseDown="GlRenderingControl_OnMouseDown"
+                                         MouseUp="GlRenderingControl_OnMouseUp"
+                                         MouseWheel="GlRenderingControl_OnMouseWheel"/>
+                </Border>
+            </Grid>
+        </Grid>
+    </Border>
 </Window>

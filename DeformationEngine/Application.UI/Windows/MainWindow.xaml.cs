@@ -5,6 +5,7 @@ using Microsoft.Win32;
 using OpenTK.Mathematics;
 using OpenTK.Wpf;
 using Rendering.OpenGL;
+using System;
 using System.Windows;
 using System.Windows.Input;
 using InputType = Deformation.Interaction.Input.InputType;
@@ -24,8 +25,8 @@ namespace Application.UI.Windows
 
             ViewModel.RequestConfirmation = message =>
             {
-                var result = MessageBox.Show(this, message, "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-                return result == MessageBoxResult.Yes;
+                var result = MessageBoxWindow.Show(this, message, "Confirm");
+                return result;
             };
 
             GlRenderingControl.Start(new GLWpfControlSettings
@@ -140,8 +141,23 @@ namespace Application.UI.Windows
             }
             catch (Exception exception)
             {
-                MessageBox.Show($"Failed to load model:\n{exception.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBoxWindow.Show(this, $"Failed to load model:\n{exception.Message}", "Error");
             }
+        }
+
+        private void Minimize_OnClick(object sender, RoutedEventArgs eventArguments)
+        {
+            WindowState = WindowState.Minimized;
+        }
+
+        private void Maximize_OnClick(object sender, RoutedEventArgs eventArguments)
+        {
+            WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+        }
+
+        private void Close_OnClick(object sender, RoutedEventArgs eventArguments)
+        {
+            Close();
         }
 
         #endregion
