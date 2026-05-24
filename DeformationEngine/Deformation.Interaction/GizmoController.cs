@@ -247,7 +247,13 @@ namespace Deformation.Interaction
                         angle = -angle;
                     }
 
-                    TargetNode.Rotation *= Quaternion.FromAxisAngle(localAxis, angle);
+                    var rotationDelta = Quaternion.FromAxisAngle(localAxis, angle);
+
+                    var offset = TargetNode.Translation - _gizmoStartCenter;
+                    var rotatedOffset = Vector3.Transform(offset, rotationDelta);
+
+                    TargetNode.Translation = _gizmoStartCenter + rotatedOffset;
+                    TargetNode.Rotation *= rotationDelta;
                 }
                 else if (Mode == GizmoMode.Translate)
                 {
