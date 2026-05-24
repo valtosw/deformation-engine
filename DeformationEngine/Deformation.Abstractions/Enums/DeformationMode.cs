@@ -4,6 +4,7 @@
     {
         Basic,
         Twist,
-        Bend
+        Bend,
+        Ffd
     }
 }

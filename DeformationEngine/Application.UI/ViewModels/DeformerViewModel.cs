@@ -20,12 +20,17 @@ namespace Application.UI.ViewModels
         private bool _preventSelfIntersection = true;
         private MeshNode? _activeMeshNode;
 
+        private int _ffdResolutionX = 3;
+        private int _ffdResolutionY = 3;
+        private int _ffdResolutionZ = 3;
+
         #endregion
 
         #region Properties
 
         public TwistDeformer TwistDeformer { get; } = new();
         public BendDeformer BendDeformer { get; } = new();
+        public FfdDeformer FfdDeformer { get; } = new();
 
         public static IEnumerable<Axis> AvailableAxes => Enum.GetValues<Axis>();
 
@@ -169,6 +174,24 @@ namespace Application.UI.ViewModels
                     ApplyDeformations();
                 }
             }
+        }
+
+        public int FfdResolutionX
+        {
+            get => _ffdResolutionX;
+            set => SetProperty(ref _ffdResolutionX, value);
+        }
+
+        public int FfdResolutionY
+        {
+            get => _ffdResolutionY;
+            set => SetProperty(ref _ffdResolutionY, value);
+        }
+
+        public int FfdResolutionZ
+        {
+            get => _ffdResolutionZ;
+            set => SetProperty(ref _ffdResolutionZ, value);
         }
 
         #endregion

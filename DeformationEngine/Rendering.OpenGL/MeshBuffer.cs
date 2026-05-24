@@ -1,4 +1,5 @@
-﻿using Deformation.Abstractions.Geometry;
+﻿using Deformation.Abstractions.Enums;
+using Deformation.Abstractions.Geometry;
 using OpenTK.Graphics.OpenGL4;
 
 namespace Rendering.OpenGL
@@ -13,6 +14,7 @@ namespace Rendering.OpenGL
 
         private int _indexCount;
         private int _vertexCount;
+        private MeshTopology _topology;
 
         #endregion
 
@@ -40,6 +42,8 @@ namespace Rendering.OpenGL
 
         public void Update(Mesh mesh)
         {
+            _topology = mesh.Topology;
+
             GL.BindVertexArray(_vertexArrayObject);
             GL.BindBuffer(BufferTarget.ArrayBuffer, _vertexBufferObject);
 
@@ -53,22 +57,10 @@ namespace Rendering.OpenGL
                 GL.BindBuffer(BufferTarget.ElementArrayBuffer, _elementBufferObject);
                 GL.BufferData(BufferTarget.ElementArrayBuffer, size: mesh.Indices.Length * sizeof(uint), mesh.Indices, BufferUsageHint.StaticDraw);
 
-                GL.VertexAttribPointer(
-                    index: 0,
-                    size: 3,
-                    type: VertexAttribPointerType.Float,
-                    normalized: false,
-                    stride: 32,
-                    offset: 0);
+                GL.VertexAttribPointer(index: 0, size: 3, type: VertexAttribPointerType.Float, normalized: false, stride: 32, offset: 0);
                 GL.EnableVertexAttribArray(index: 0);
 
-                GL.VertexAttribPointer(
-                    index: 1,
-                    size: 3,
-                    type: VertexAttribPointerType.Float,
-                    normalized: false,
-                    stride: 32,
-                    offset: 12);
+                GL.VertexAttribPointer(index: 1, size: 3, type: VertexAttribPointerType.Float, normalized: false, stride: 32, offset: 12);
                 GL.EnableVertexAttribArray(index: 1);
             }
             else
@@ -82,7 +74,12 @@ namespace Rendering.OpenGL
         public void Draw()
         {
             GL.BindVertexArray(_vertexArrayObject);
-            GL.DrawElements(PrimitiveType.Triangles, _indexCount, DrawElementsType.UnsignedInt, indices: 0);
+
+            var primitiveType = _topology == MeshTopology.Triangles
+                ? PrimitiveType.Triangles
+                : PrimitiveType.Lines;
+
+            GL.DrawElements(primitiveType, _indexCount, DrawElementsType.UnsignedInt, indices: 0);
         }
 
         #endregion

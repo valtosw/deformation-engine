@@ -2,6 +2,7 @@
 using Deformation.Abstractions.Enums;
 using Deformation.Abstractions.Geometry;
 using OpenTK.Mathematics;
+using Rendering.Abstractions;
 
 namespace Deformation.Scene.Nodes
 {
@@ -35,8 +36,8 @@ namespace Deformation.Scene.Nodes
         public void SetMode(GizmoMode mode)
         {
             _translateGroup.IsVisible = mode == GizmoMode.Translate;
-            _rotateGroup.IsVisible    = mode == GizmoMode.Rotate;
-            _scaleGroup.IsVisible     = mode == GizmoMode.Scale;
+            _rotateGroup.IsVisible = mode == GizmoMode.Rotate;
+            _scaleGroup.IsVisible = mode == GizmoMode.Scale;
         }
 
         public MeshNode GetActiveXAxis(GizmoMode mode)
@@ -44,9 +45,9 @@ namespace Deformation.Scene.Nodes
             return mode switch
             {
                 GizmoMode.Translate => (MeshNode)_translateGroup.Children[0],
-                GizmoMode.Rotate    => (MeshNode)_rotateGroup.Children[0],
-                GizmoMode.Scale     => (MeshNode)_scaleGroup.Children[0],
-                _                   => (MeshNode)_translateGroup.Children[0]
+                GizmoMode.Rotate => (MeshNode)_rotateGroup.Children[0],
+                GizmoMode.Scale => (MeshNode)_scaleGroup.Children[0],
+                _ => (MeshNode)_translateGroup.Children[0]
             };
         }
 
@@ -55,9 +56,9 @@ namespace Deformation.Scene.Nodes
             return mode switch
             {
                 GizmoMode.Translate => (MeshNode)_translateGroup.Children[1],
-                GizmoMode.Rotate    => (MeshNode)_rotateGroup.Children[1],
-                GizmoMode.Scale     => (MeshNode)_scaleGroup.Children[1],
-                _                   => (MeshNode)_translateGroup.Children[1]
+                GizmoMode.Rotate => (MeshNode)_rotateGroup.Children[1],
+                GizmoMode.Scale => (MeshNode)_scaleGroup.Children[1],
+                _ => (MeshNode)_translateGroup.Children[1]
             };
         }
 
@@ -66,10 +67,22 @@ namespace Deformation.Scene.Nodes
             return mode switch
             {
                 GizmoMode.Translate => (MeshNode)_translateGroup.Children[2],
-                GizmoMode.Rotate    => (MeshNode)_rotateGroup.Children[2],
-                GizmoMode.Scale     => (MeshNode)_scaleGroup.Children[2],
-                _                   => (MeshNode)_translateGroup.Children[2]
+                GizmoMode.Rotate => (MeshNode)_rotateGroup.Children[2],
+                GizmoMode.Scale => (MeshNode)_scaleGroup.Children[2],
+                _ => (MeshNode)_translateGroup.Children[2]
             };
+        }
+
+        public override void OnRendering(IRenderingContext renderingContext)
+        {
+            if (!IsVisible)
+            {
+                return;
+            }
+
+            renderingContext.ClearDepthBuffer();
+
+            base.OnRendering(renderingContext);
         }
 
         #endregion

@@ -30,6 +30,7 @@
                     <controls:BasicTransformationPanel Visibility="{Binding BasicPanelVisibility}"/>
                     <controls:TwistDeformationPanel Visibility="{Binding TwistPanelVisibility}"/>
                     <controls:BendDeformationPanel Visibility="{Binding BendPanelVisibility}"/>
+                    <controls:FfdDeformationPanel Visibility="{Binding FfdPanelVisibility}"/>
                 </StackPanel>
             </ScrollViewer>
 

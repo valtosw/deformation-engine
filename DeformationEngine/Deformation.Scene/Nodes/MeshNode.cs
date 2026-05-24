@@ -6,7 +6,7 @@ using Rendering.Abstractions;
 
 namespace Deformation.Scene.Nodes
 {
-    public sealed class MeshNode : SceneNode
+    public class MeshNode : SceneNode
     {
         #region Fields
 
@@ -16,6 +16,7 @@ namespace Deformation.Scene.Nodes
 
         private int? _bufferId;
         private bool _isBufferDirty;
+        private bool _isDeformationDirty;
 
         #endregion
 
@@ -25,6 +26,7 @@ namespace Deformation.Scene.Nodes
 
         public bool IgnoreDepth { get; set; }
         public bool ForceSolid { get; set; }
+        public bool ForceWireframe { get; set; }
 
         public Mesh? Mesh
         {
@@ -74,19 +76,7 @@ namespace Deformation.Scene.Nodes
 
         public void ApplyDeformers()
         {
-            if (_originalMesh is null || _deformedMesh is null)
-            {
-                return;
-            }
-
-            ResetDeformedMeshToOriginal();
-
-            foreach (var deformer in _deformers)
-            {
-                deformer.Deform(_deformedMesh);
-            }
-
-            NotifyGeometryChanged();
+            _isDeformationDirty = true;
         }
 
         public void NotifyGeometryChanged()
@@ -102,6 +92,12 @@ namespace Deformation.Scene.Nodes
 
         public override void OnRendering(IRenderingContext renderingContext)
         {
+            if (_isDeformationDirty)
+            {
+                ProcessDeformations();
+                _isDeformationDirty = false;
+            }
+
             if (!IsVisible)
             {
                 return;
@@ -128,12 +124,16 @@ namespace Deformation.Scene.Nodes
             {
                 renderingContext.SetWireframeOverride(false);
             }
+            else if (ForceWireframe)
+            {
+                renderingContext.SetWireframeOverride(true);
+            }
 
             renderingContext.SetVector("objectColor", Color);
             renderingContext.SetMatrix("model", WorldTransform);
             renderingContext.DrawBuffer(_bufferId.Value, IgnoreDepth);
 
-            if (ForceSolid)
+            if (ForceSolid || ForceWireframe)
             {
                 renderingContext.SetWireframeOverride(null);
             }
@@ -144,6 +144,23 @@ namespace Deformation.Scene.Nodes
         #endregion
 
         #region Private Logic
+
+        private void ProcessDeformations()
+        {
+            if (_originalMesh is null || _deformedMesh is null)
+            {
+                return;
+            }
+
+            ResetDeformedMeshToOriginal();
+
+            foreach (var deformer in _deformers)
+            {
+                deformer.Deform(_deformedMesh);
+            }
+
+            NotifyGeometryChanged();
+        }
 
         private void ResetDeformedMeshToOriginal()
         {
@@ -166,7 +183,10 @@ namespace Deformation.Scene.Nodes
             var clonedIndices = new uint[source.Indices.Length];
             source.Indices.CopyTo(clonedIndices, 0);
 
-            var clone = new Mesh(clonedVertices, clonedIndices);
+            var clone = new Mesh(clonedVertices, clonedIndices)
+            {
+                Topology = source.Topology
+            };
 
             if (source.LocalBoundingBox is not null)
             {

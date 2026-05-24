@@ -46,8 +46,12 @@ namespace Deformation.Scene.Nodes
             get => _translation;
             set
             {
-                _translation = value;
-                InvalidateLocalTransform();
+                if (_translation != value)
+                {
+                    _translation = value;
+                    InvalidateLocalTransform();
+                    OnTransformChanged();
+                }
             }
         }
 
@@ -56,8 +60,12 @@ namespace Deformation.Scene.Nodes
             get => _rotation;
             set
             {
-                _rotation = value;
-                InvalidateLocalTransform();
+                if (_rotation != value)
+                {
+                    _rotation = value;
+                    InvalidateLocalTransform();
+                    OnTransformChanged();
+                }
             }
         }
 
@@ -66,8 +74,12 @@ namespace Deformation.Scene.Nodes
             get => _scale;
             set
             {
-                _scale = value;
-                InvalidateLocalTransform();
+                if (_scale != value)
+                {
+                    _scale = value;
+                    InvalidateLocalTransform();
+                    OnTransformChanged();
+                }
             }
         }
 
@@ -166,6 +178,8 @@ namespace Deformation.Scene.Nodes
         #endregion
 
         #region Private Logic
+
+        protected virtual void OnTransformChanged() { }
 
         private protected void InvalidateBoundingBox()
         {

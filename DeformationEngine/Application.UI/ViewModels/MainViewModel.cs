@@ -19,7 +19,10 @@ namespace Application.UI.ViewModels
         #region Fields
 
         private readonly IMeshImporterFactory _meshImporterFactory;
+        private readonly List<ControlPointNode> _ffdControlPoints = [];
+
         private MeshNode? _activeMeshNode;
+        private MeshNode? _latticeNode;
         private bool _hasModel;
         private DeformationMode _selectedMode = DeformationMode.Basic;
 
@@ -38,6 +41,7 @@ namespace Application.UI.ViewModels
 
             Engine.RegisterController(new CameraKeyboardController(CameraSystem, Engine));
             Engine.RegisterController(new GizmoController(GizmoSystem, CameraSystem));
+            Engine.RegisterController(new FfdSelectionController(CameraSystem, GizmoSystem, () => _ffdControlPoints));
             Engine.RegisterController(new CameraMouseController(CameraSystem));
 
             Engine.RootNode.AddChild(GizmoSystem.GizmoNode);
@@ -99,12 +103,36 @@ namespace Application.UI.ViewModels
                     }
 
                     _selectedMode = value;
-                    GizmoSystem.IsEnabled = _hasModel && _selectedMode == DeformationMode.Basic;
+                    GizmoSystem.IsEnabled = _hasModel && (_selectedMode == DeformationMode.Basic || _selectedMode == DeformationMode.Ffd);
+
+                    foreach (var controlPointNode in _ffdControlPoints)
+                    {
+                        controlPointNode.IsVisible = _selectedMode == DeformationMode.Ffd;
+                    }
+
+                    if (_selectedMode != DeformationMode.Ffd && _selectedMode != DeformationMode.Basic)
+                    {
+                        GizmoSystem.TargetNode = null;
+                    }
+                    else if (_selectedMode == DeformationMode.Basic)
+                    {
+                        GizmoSystem.TargetNode = _activeMeshNode;
+                    }
+                    else if (_selectedMode == DeformationMode.Ffd)
+                    {
+                        GizmoSystem.TargetNode = null;
+
+                        if (_ffdControlPoints.Count == 0)
+                        {
+                            SetupFfdLattice();
+                        }
+                    }
 
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(BasicPanelVisibility));
                     OnPropertyChanged(nameof(TwistPanelVisibility));
                     OnPropertyChanged(nameof(BendPanelVisibility));
+                    OnPropertyChanged(nameof(FfdPanelVisibility));
                 }
             }
         }
@@ -130,6 +158,14 @@ namespace Application.UI.ViewModels
             get
             {
                 return SelectedMode == DeformationMode.Bend ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+
+        public Visibility FfdPanelVisibility
+        {
+            get
+            {
+                return SelectedMode == DeformationMode.Ffd ? Visibility.Visible : Visibility.Collapsed;
             }
         }
 
@@ -182,16 +218,130 @@ namespace Application.UI.ViewModels
 
             _activeMeshNode.AddDeformer(Deformers.TwistDeformer);
             _activeMeshNode.AddDeformer(Deformers.BendDeformer);
+            _activeMeshNode.AddDeformer(Deformers.FfdDeformer);
             Deformers.ActiveMeshNode = _activeMeshNode;
 
             GizmoSystem.TargetNode = _activeMeshNode;
 
             Engine.RootNode.AddChild(_activeMeshNode);
 
+            Engine.RootNode.RemoveChild(GizmoSystem.GizmoNode);
+            Engine.RootNode.AddChild(GizmoSystem.GizmoNode);
+
             CameraSystem.TargetSphere = BoundingSphere.FromAxisAlignedBoundingBox(_activeMeshNode.BoundingBox);
             CameraSystem.ZoomToFit();
 
             HasModel = true;
+        }
+
+        public void SetupFfdLattice()
+        {
+            if (_activeMeshNode?.Mesh is null)
+            {
+                return;
+            }
+
+            foreach (var controlPointNode in _ffdControlPoints)
+            {
+                _activeMeshNode.RemoveChild(controlPointNode);
+            }
+
+            if (_latticeNode is not null)
+            {
+                _activeMeshNode.RemoveChild(_latticeNode);
+            }
+
+            _ffdControlPoints.Clear();
+
+            Deformers.FfdDeformer.Initialize(_activeMeshNode.Mesh, Deformers.FfdResolutionX, Deformers.FfdResolutionY, Deformers.FfdResolutionZ);
+
+            var boundsSize = _activeMeshNode.BoundingBox.Size.Length;
+            var controlPointScale = MathF.Max(0.01f, CameraSystem.TargetSphere.Radius * 0.035f);
+            var controlPointMesh = MeshFactory.CreateBox(new Vector3(controlPointScale), Vector3.Zero);
+
+            var lineVertices = new List<Vertex>();
+            var lineIndices = new List<uint>();
+
+            var resY = Deformers.FfdResolutionY;
+            var resZ = Deformers.FfdResolutionZ;
+
+            for (var indexX = 0; indexX < Deformers.FfdResolutionX; indexX++)
+            {
+                for (var indexY = 0; indexY < Deformers.FfdResolutionY; indexY++)
+                {
+                    for (var indexZ = 0; indexZ < Deformers.FfdResolutionZ; indexZ++)
+                    {
+                        var position = Deformers.FfdDeformer.GetControlPoint(indexX, indexY, indexZ);
+
+                        var controlPointNode = new ControlPointNode(indexX, indexY, indexZ, OnControlPointMoved)
+                        {
+                            Translation = position,
+                            Mesh = controlPointMesh,
+                            Color = ColorConstants.ZAxisColor,
+                            IsVisible = SelectedMode == DeformationMode.Ffd,
+                            IgnoreDepth = true,
+                            ForceSolid = true
+                        };
+
+                        _ffdControlPoints.Add(controlPointNode);
+                        _activeMeshNode.AddChild(controlPointNode);
+
+                        lineVertices.Add(new Vertex(position));
+
+                        var currentIndex = (uint)(indexX * (resY * resZ) + indexY * resZ + indexZ);
+
+                        if (indexX < Deformers.FfdResolutionX - 1)
+                        {
+                            lineIndices.Add(currentIndex);
+                            lineIndices.Add((uint)((indexX + 1) * (resY * resZ) + indexY * resZ + indexZ));
+                        }
+                        if (indexY < Deformers.FfdResolutionY - 1)
+                        {
+                            lineIndices.Add(currentIndex);
+                            lineIndices.Add((uint)(indexX * (resY * resZ) + (indexY + 1) * resZ + indexZ));
+                        }
+                        if (indexZ < Deformers.FfdResolutionZ - 1)
+                        {
+                            lineIndices.Add(currentIndex);
+                            lineIndices.Add((uint)(indexX * (resY * resZ) + indexY * resZ + (indexZ + 1)));
+                        }
+                    }
+                }
+            }
+
+            var lineMesh = new Mesh([.. lineVertices], [.. lineIndices])
+            {
+                Topology = MeshTopology.Lines
+            };
+
+            _latticeNode = new MeshNode
+            {
+                Mesh = lineMesh,
+                Color = new Vector3(0.6f, 0.6f, 0.6f),
+                IsVisible = SelectedMode == DeformationMode.Ffd,
+                IgnoreDepth = true,
+                ForceWireframe = true
+            };
+
+            _activeMeshNode.AddChild(_latticeNode);
+            _activeMeshNode.ApplyDeformers();
+        }
+
+        public void SubdivideActiveMesh()
+        {
+            if (_activeMeshNode?.Mesh is null)
+            {
+                return;
+            }
+
+            var newMesh = _activeMeshNode.Mesh.Subdivide();
+
+            _activeMeshNode.Mesh = newMesh;
+
+            if (SelectedMode == DeformationMode.Ffd)
+            {
+                SetupFfdLattice();
+            }
         }
 
         public void RestoreParameters()
@@ -209,6 +359,11 @@ namespace Application.UI.ViewModels
             Deformers.BendAngle = 0f;
             Deformers.TwistPivot = 0.5f;
             Deformers.BendPivot = 0.5f;
+
+            if (SelectedMode == DeformationMode.Ffd)
+            {
+                SetupFfdLattice();
+            }
         }
 
         public void BakeTransformations()
@@ -258,6 +413,20 @@ namespace Application.UI.ViewModels
 
         #region Private Logic
 
+        private void OnControlPointMoved(int indexX, int indexY, int indexZ, Vector3 newPosition)
+        {
+            Deformers.FfdDeformer.UpdateControlPoint(indexX, indexY, indexZ, newPosition);
+
+            if (_latticeNode?.Mesh is not null)
+            {
+                var flatIndex = indexX * (Deformers.FfdResolutionY * Deformers.FfdResolutionZ) + indexY * Deformers.FfdResolutionZ + indexZ;
+                _latticeNode.Mesh.Vertices[flatIndex].Position = newPosition;
+                _latticeNode.NotifyGeometryChanged();
+            }
+
+            _activeMeshNode?.ApplyDeformers();
+        }
+
         private bool HasUnbakedChanges()
         {
             if (_activeMeshNode is null)
@@ -280,6 +449,11 @@ namespace Application.UI.ViewModels
             if (SelectedMode == DeformationMode.Bend)
             {
                 return MathF.Abs(Deformers.BendAngle) > MathConstants.ZeroTolerance;
+            }
+
+            if (SelectedMode == DeformationMode.Ffd)
+            {
+                return _ffdControlPoints.Count > 0;
             }
 
             return false;

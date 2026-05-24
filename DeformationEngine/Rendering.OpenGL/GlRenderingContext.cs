@@ -7,8 +7,8 @@ namespace Rendering.OpenGL
 {
     public sealed class GlRenderingContext(Shader shader) : IRenderingContext
     {
-        #region Fields
 
+        #region Fields
         private readonly Dictionary<int, MeshBuffer> _buffers = [];
         private int _nextBufferId = 1;
 
@@ -41,6 +41,11 @@ namespace Rendering.OpenGL
 
             SetWireframeOverride(null);
             shader.Use();
+        }
+
+        public void ClearDepthBuffer()
+        {
+            GL.Clear(ClearBufferMask.DepthBufferBit);
         }
 
         public void SetMatrix(string name, Matrix4 matrix)

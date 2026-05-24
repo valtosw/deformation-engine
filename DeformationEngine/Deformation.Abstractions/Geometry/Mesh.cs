@@ -1,15 +1,20 @@
-﻿namespace Deformation.Abstractions.Geometry
+﻿using System.Collections.Generic;
+using System.Linq;
+using Deformation.Abstractions.Enums;
+
+namespace Deformation.Abstractions.Geometry
 {
     public sealed class Mesh
     {
         public Vertex[] Vertices { get; set; }
         public uint[] Indices { get; set; }
         public AxisAlignedBoundingBox LocalBoundingBox { get; set; }
+        public MeshTopology Topology { get; set; } = MeshTopology.Triangles;
 
-        public Mesh(Vertex[] vertices, uint[] indicies)
+        public Mesh(Vertex[] vertices, uint[] indices)
         {
             Vertices = vertices;
-            Indices = indicies;
+            Indices = indices;
             LocalBoundingBox = AxisAlignedBoundingBox.FromPoints(Vertices.Select(v => v.Position));
         }
 
