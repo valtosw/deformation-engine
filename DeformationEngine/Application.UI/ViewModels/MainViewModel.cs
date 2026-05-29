@@ -481,7 +481,7 @@ namespace Application.UI.ViewModels
             {
                 var flatIndex = lattice.GetFlatIndex(indexX, indexY, indexZ);
                 _latticeNode.Mesh.Vertices[flatIndex].Position = newPosition;
-                _latticeNode.NotifyGeometryChanged();
+                _latticeNode.ApplyDeformers();
             }
 
             _activeMeshNode?.ApplyDeformers();
@@ -535,7 +535,7 @@ namespace Application.UI.ViewModels
                 }
             }
 
-            _latticeNode.NotifyGeometryChanged();
+            _latticeNode.ApplyDeformers();
         }
 
         private void SetFfdVisualsVisible(bool isVisible)
