@@ -80,8 +80,6 @@ namespace Deformation.Scene.Nodes
                 return;
             }
 
-            renderingContext.ClearDepthBuffer();
-
             base.OnRendering(renderingContext);
         }
 

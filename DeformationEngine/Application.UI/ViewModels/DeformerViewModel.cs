@@ -33,6 +33,8 @@ namespace Application.UI.ViewModels
         public FfdDeformer FfdDeformer { get; } = new();
 
         public static IEnumerable<Axis> AvailableAxes => Enum.GetValues<Axis>();
+        public static int MinimumFfdResolution => FfdDeformer.MinimumResolution;
+        public static int MaximumFfdResolution => FfdDeformer.MaximumResolution;
 
         public MeshNode? ActiveMeshNode
         {
@@ -179,19 +181,19 @@ namespace Application.UI.ViewModels
         public int FfdResolutionX
         {
             get => _ffdResolutionX;
-            set => SetProperty(ref _ffdResolutionX, value);
+            set => SetProperty(ref _ffdResolutionX, ClampFfdResolution(value));
         }
 
         public int FfdResolutionY
         {
             get => _ffdResolutionY;
-            set => SetProperty(ref _ffdResolutionY, value);
+            set => SetProperty(ref _ffdResolutionY, ClampFfdResolution(value));
         }
 
         public int FfdResolutionZ
         {
             get => _ffdResolutionZ;
-            set => SetProperty(ref _ffdResolutionZ, value);
+            set => SetProperty(ref _ffdResolutionZ, ClampFfdResolution(value));
         }
 
         #endregion
@@ -201,6 +203,11 @@ namespace Application.UI.ViewModels
         private void ApplyDeformations()
         {
             _activeMeshNode?.ApplyDeformers();
+        }
+
+        private static int ClampFfdResolution(int value)
+        {
+            return Math.Clamp(value, FfdDeformer.MinimumResolution, FfdDeformer.MaximumResolution);
         }
 
         #endregion

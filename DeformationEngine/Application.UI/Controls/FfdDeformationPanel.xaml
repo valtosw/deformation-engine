@@ -7,13 +7,13 @@
 
         <StackPanel DataContext="{Binding Deformers}">
             <TextBlock Text="X Axis Resolution:" Margin="0,5,0,0"/>
-            <Slider Minimum="2" Maximum="8" Value="{Binding FfdResolutionX, Mode=TwoWay}" TickFrequency="1" IsSnapToTickEnabled="True" LargeChange="1"/>
+            <Slider Minimum="{Binding MinimumFfdResolution}" Maximum="{Binding MaximumFfdResolution}" Value="{Binding FfdResolutionX, Mode=TwoWay}" TickFrequency="1" IsSnapToTickEnabled="True" LargeChange="1"/>
 
             <TextBlock Text="Y Axis Resolution:" Margin="0,5,0,0"/>
-            <Slider Minimum="2" Maximum="8" Value="{Binding FfdResolutionY, Mode=TwoWay}" TickFrequency="1" IsSnapToTickEnabled="True" LargeChange="1"/>
+            <Slider Minimum="{Binding MinimumFfdResolution}" Maximum="{Binding MaximumFfdResolution}" Value="{Binding FfdResolutionY, Mode=TwoWay}" TickFrequency="1" IsSnapToTickEnabled="True" LargeChange="1"/>
 
             <TextBlock Text="Z Axis Resolution:" Margin="0,5,0,0"/>
-            <Slider Minimum="2" Maximum="8" Value="{Binding FfdResolutionZ, Mode=TwoWay}" TickFrequency="1" IsSnapToTickEnabled="True" LargeChange="1"/>
+            <Slider Minimum="{Binding MinimumFfdResolution}" Maximum="{Binding MaximumFfdResolution}" Value="{Binding FfdResolutionZ, Mode=TwoWay}" TickFrequency="1" IsSnapToTickEnabled="True" LargeChange="1"/>
         </StackPanel>
 
         <Button Content="Generate Lattice" Click="GenerateLattice_OnClick" Margin="0,15,0,5" Foreground="{StaticResource AccentBrush}"/>

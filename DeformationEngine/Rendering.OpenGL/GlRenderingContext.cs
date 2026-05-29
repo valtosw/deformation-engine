@@ -43,11 +43,6 @@ namespace Rendering.OpenGL
             shader.Use();
         }
 
-        public void ClearDepthBuffer()
-        {
-            GL.Clear(ClearBufferMask.DepthBufferBit);
-        }
-
         public void SetMatrix(string name, Matrix4 matrix)
         {
             shader.SetMatrix4(name, matrix);

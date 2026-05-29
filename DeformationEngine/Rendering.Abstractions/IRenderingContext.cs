@@ -8,7 +8,6 @@ namespace Rendering.Abstractions
         bool IsWireframeEnabled { get; set; }
 
         void BeginFrame();
-        void ClearDepthBuffer();
 
         void SetMatrix(string name, Matrix4 matrix);
         void SetVector(string name, Vector3 vector);

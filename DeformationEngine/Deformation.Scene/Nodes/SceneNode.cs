@@ -15,6 +15,7 @@ namespace Deformation.Scene.Nodes
         private Vector3 _translation = Vector3.Zero;
         private Quaternion _rotation = Quaternion.Identity;
         private Vector3 _scale = Vector3.One;
+        private bool _isVisible = true;
 
         private Matrix4? _cachedLocalTransform;
         private Matrix4? _cachedWorldTransform;
@@ -129,14 +130,29 @@ namespace Deformation.Scene.Nodes
                     boundingBox = AxisAlignedBoundingBox.FromPoints(worldCorners);
                 }
 
-                boundingBox = _children.Aggregate(boundingBox, (current, child) => AxisAlignedBoundingBox.Combine(current, child.BoundingBox));
+                boundingBox = _children
+                    .Where(child => child.IsVisible)
+                    .Aggregate(boundingBox, (current, child) => AxisAlignedBoundingBox.Combine(current, child.BoundingBox));
 
                 return _cachedBoundingBox = boundingBox 
                     ?? new AxisAlignedBoundingBox(WorldTransform.TransformPoint(Vector3.Zero), WorldTransform.TransformPoint(Vector3.Zero));
             }
         }
 
-        public bool IsVisible { get; set; } = true;    
+        public bool IsVisible
+        {
+            get => _isVisible;
+            set
+            {
+                if (_isVisible == value)
+                {
+                    return;
+                }
+
+                _isVisible = value;
+                InvalidateBoundingBox();
+            }
+        }
 
         protected virtual AxisAlignedBoundingBox? LocalBoundingBox => null;
 

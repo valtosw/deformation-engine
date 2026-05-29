@@ -1,4 +1,5 @@
-﻿using Deformation.Abstractions.Extensions;
+using Deformation.Abstractions.Enums;
+using Deformation.Abstractions.Extensions;
 using Deformation.Interaction.Abstractions;
 using Deformation.Interaction.Input;
 using Deformation.Scene.Abstractions;
@@ -6,13 +7,22 @@ using Deformation.Scene.Nodes;
 
 namespace Deformation.Interaction
 {
-    public sealed class FfdSelectionController(ICameraSystem cameraSystem, IGizmoSystem gizmoSystem, Func<IEnumerable<ControlPointNode>> controlPointProvider) 
+    public sealed class FfdSelectionController(
+        ICameraSystem cameraSystem,
+        IGizmoSystem gizmoSystem,
+        Func<bool> isEnabled,
+        Func<IEnumerable<ControlPointNode>> controlPointProvider)
         : IInputProcessor
     {
         #region Public Logic
 
         public bool ProcessInput(IInputEvent inputEvent)
         {
+            if (!isEnabled())
+            {
+                return false;
+            }
+
             if (inputEvent is not MouseClickEvent mouseClickEvent)
             {
                 return false;
@@ -49,6 +59,7 @@ namespace Deformation.Interaction
 
             if (closestNode is not null)
             {
+                gizmoSystem.Mode = GizmoMode.Translate;
                 gizmoSystem.TargetNode = closestNode;
                 return true;
             }

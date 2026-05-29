@@ -79,6 +79,17 @@ namespace Deformation.Scene.Nodes
             _isDeformationDirty = true;
         }
 
+        public void ProcessPendingDeformations()
+        {
+            if (!_isDeformationDirty)
+            {
+                return;
+            }
+
+            ProcessDeformations();
+            _isDeformationDirty = false;
+        }
+
         public void NotifyGeometryChanged()
         {
             if (_deformedMesh is not null)
@@ -92,11 +103,7 @@ namespace Deformation.Scene.Nodes
 
         public override void OnRendering(IRenderingContext renderingContext)
         {
-            if (_isDeformationDirty)
-            {
-                ProcessDeformations();
-                _isDeformationDirty = false;
-            }
+            ProcessPendingDeformations();
 
             if (!IsVisible)
             {

@@ -206,6 +206,55 @@ namespace Deformation.Abstractions.Geometry
             return new Mesh([.. vertices], [.. indices]);
         }
 
+        public static Mesh CreateSphere(float radius, int rings, int segments, Vector3 center)
+        {
+            rings = System.Math.Max(3, rings);
+            segments = System.Math.Max(3, segments);
+
+            var vertices = new List<Vertex>();
+            var indices = new List<uint>();
+
+            for (var ring = 0; ring <= rings; ring++)
+            {
+                var v = ring / (float)rings;
+                var phi = v * MathHelper.Pi;
+                var sinPhi = MathF.Sin(phi);
+                var cosPhi = MathF.Cos(phi);
+
+                for (var segment = 0; segment <= segments; segment++)
+                {
+                    var u = segment / (float)segments;
+                    var theta = u * MathHelper.TwoPi;
+                    var sinTheta = MathF.Sin(theta);
+                    var cosTheta = MathF.Cos(theta);
+
+                    var normal = new Vector3(cosTheta * sinPhi, cosPhi, sinTheta * sinPhi);
+                    var position = center + normal * radius;
+
+                    vertices.Add(new Vertex(position, normal));
+                }
+            }
+
+            for (var ring = 0; ring < rings; ring++)
+            {
+                for (var segment = 0; segment < segments; segment++)
+                {
+                    var current = (uint)(ring * (segments + 1) + segment);
+                    var next = (uint)((ring + 1) * (segments + 1) + segment);
+
+                    indices.Add(current);
+                    indices.Add(next);
+                    indices.Add(current + 1);
+
+                    indices.Add(current + 1);
+                    indices.Add(next);
+                    indices.Add(next + 1);
+                }
+            }
+
+            return new Mesh([.. vertices], [.. indices]);
+        }
+
         public static Mesh Combine(Mesh meshA, Mesh meshB)
         {
             var vertices = new Vertex[meshA.Vertices.Length + meshB.Vertices.Length];

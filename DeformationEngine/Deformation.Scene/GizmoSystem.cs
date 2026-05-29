@@ -36,6 +36,12 @@ namespace Deformation.Scene
             }
             set
             {
+                if (_targetNode == value)
+                {
+                    return;
+                }
+
+                EndDrag();
                 _targetNode = value;
             }
         }
@@ -48,16 +54,20 @@ namespace Deformation.Scene
         {
             if (TargetNode is not null && IsEnabled)
             {
+                var activeMode = GetActiveMode();
+
                 GizmoNode.IsVisible = true;
-                GizmoNode.SetMode(Mode);
+                GizmoNode.SetMode(activeMode);
 
                 if (!_isDragging)
                 {
                     GizmoNode.Translation = TargetNode.BoundingBox.Center;
                     GizmoNode.Rotation = TargetNode.Rotation;
 
-                    var size = TargetNode.BoundingBox.Size.Length;
-                    GizmoNode.Scale = Vector3.One * MathF.Max(0.1f, size * 0.35f);
+                    var size = GetScaleReferenceSize();
+                    var scaleFactor = TargetNode is ControlPointNode ? 0.12f : 0.35f;
+
+                    GizmoNode.Scale = Vector3.One * MathF.Max(0.1f, size * scaleFactor);
                 }
                 else
                 {
@@ -73,9 +83,10 @@ namespace Deformation.Scene
 
         public bool StartDrag(Ray ray)
         {
-            var xAxis = GizmoNode.GetActiveXAxis(Mode);
-            var yAxis = GizmoNode.GetActiveYAxis(Mode);
-            var zAxis = GizmoNode.GetActiveZAxis(Mode);
+            var activeMode = GetActiveMode();
+            var xAxis = GizmoNode.GetActiveXAxis(activeMode);
+            var yAxis = GizmoNode.GetActiveYAxis(activeMode);
+            var zAxis = GizmoNode.GetActiveZAxis(activeMode);
 
             var hitX = CheckIntersection(ray, xAxis, out var distanceX);
             var hitY = CheckIntersection(ray, yAxis, out var distanceY);
@@ -168,7 +179,7 @@ namespace Deformation.Scene
 
         private Plane CalculateDragPlane(Ray ray, Vector3 axisDirection)
         {
-            if (Mode == GizmoMode.Rotate)
+            if (GetActiveMode() == GizmoMode.Rotate)
             {
                 return new Plane(axisDirection, _gizmoStartCenter);
             }
@@ -199,7 +210,9 @@ namespace Deformation.Scene
 
             var localAxis = GetLocalAxis(_activeAxis.Value);
 
-            if (Mode == GizmoMode.Rotate)
+            var activeMode = GetActiveMode();
+
+            if (activeMode == GizmoMode.Rotate)
             {
                 var startVector = (_lastIntersection - _gizmoStartCenter).Normalized();
                 var currentVector = (currentIntersection - _gizmoStartCenter).Normalized();
@@ -220,14 +233,14 @@ namespace Deformation.Scene
                 TargetNode.Translation = _gizmoStartCenter + rotatedOffset;
                 TargetNode.Rotation *= rotationDelta;
             }
-            else if (Mode == GizmoMode.Translate)
+            else if (activeMode == GizmoMode.Translate)
             {
                 var delta = currentIntersection - _lastIntersection;
                 var projection = Vector3.Dot(delta, axisDirection);
 
                 TargetNode.Translation += axisDirection * projection;
             }
-            else if (Mode == GizmoMode.Scale)
+            else if (activeMode == GizmoMode.Scale)
             {
                 var delta = currentIntersection - _lastIntersection;
                 var projection = Vector3.Dot(delta, axisDirection);
@@ -246,6 +259,21 @@ namespace Deformation.Scene
         private Vector3 GetWorldAxisDirection(Axis axis)
         {
             return GizmoNode.WorldTransform.TransformDirection(GetLocalAxis(axis)).Normalized();
+        }
+
+        private GizmoMode GetActiveMode()
+        {
+            return TargetNode is ControlPointNode ? GizmoMode.Translate : Mode;
+        }
+
+        private float GetScaleReferenceSize()
+        {
+            if (TargetNode is ControlPointNode && TargetNode.Parent is not null)
+            {
+                return TargetNode.Parent.BoundingBox.Size.Length;
+            }
+
+            return TargetNode?.BoundingBox.Size.Length ?? 1f;
         }
 
         private static Vector3 GetLocalAxis(Axis axis)
