@@ -196,16 +196,24 @@ namespace Deformation.IO.Importers
                 nodeByName.TryGetValue(boneName, out var node);
 
                 var parentIndex = FindNearestBoneParentIndex(node, boneIndexByName);
-                var localTransform = node is not null
-                    ? GetLocalTransformToBoneParent(node, boneIndexByName)
-                    : Matrix4.Identity;
+
+                var ibt = inverseBindTransforms.TryGetValue(boneIndex, out var inv) ? inv : Matrix4.Identity;
+                var bindWorld = ibt.Inverted();
+                var localTransform = bindWorld;
+
+                if (parentIndex is int pIndex)
+                {
+                    var parentIbt = inverseBindTransforms.TryGetValue(pIndex, out var pInv) ? pInv : Matrix4.Identity;
+                    var parentBindWorld = parentIbt.Inverted();
+                    localTransform = bindWorld * parentBindWorld.Inverted();
+                }
 
                 bones[boneIndex] = new SkinBone(
                     boneIndex,
                     boneName,
                     parentIndex,
                     localTransform,
-                    inverseBindTransforms.TryGetValue(boneIndex, out var inverseBindTransform) ? inverseBindTransform : Matrix4.Identity);
+                    ibt);
             }
 
             foreach (var bone in bones)
@@ -247,20 +255,6 @@ namespace Deformation.IO.Importers
             }
 
             return null;
-        }
-
-        private static Matrix4 GetLocalTransformToBoneParent(Node node, Dictionary<string, int> boneIndexByName)
-        {
-            var transform = ToMatrix4(node.Transform);
-            var parent = node.Parent;
-
-            while (parent is not null && !boneIndexByName.ContainsKey(parent.Name))
-            {
-                transform = transform * ToMatrix4(parent.Transform);
-                parent = parent.Parent;
-            }
-
-            return transform;
         }
 
         private static VertexWeight[] NormalizeAndLimitWeights(List<VertexWeight> weights)

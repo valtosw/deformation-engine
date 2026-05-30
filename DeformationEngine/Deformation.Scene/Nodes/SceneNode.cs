@@ -84,7 +84,7 @@ namespace Deformation.Scene.Nodes
             }
         }
 
-        public Matrix4 LocalTransform
+        public virtual Matrix4 LocalTransform
         {
             get
             {
@@ -134,7 +134,7 @@ namespace Deformation.Scene.Nodes
                     .Where(child => child.IsVisible)
                     .Aggregate(boundingBox, (current, child) => AxisAlignedBoundingBox.Combine(current, child.BoundingBox));
 
-                return _cachedBoundingBox = boundingBox 
+                return _cachedBoundingBox = boundingBox
                     ?? new AxisAlignedBoundingBox(WorldTransform.TransformPoint(Vector3.Zero), WorldTransform.TransformPoint(Vector3.Zero));
             }
         }
@@ -203,7 +203,7 @@ namespace Deformation.Scene.Nodes
             Parent?.InvalidateBoundingBox();
         }
 
-        private void InvalidateLocalTransform()
+        protected void InvalidateLocalTransform()
         {
             _cachedLocalTransform = null;
             InvalidateWorldTransform();

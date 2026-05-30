@@ -139,6 +139,48 @@ namespace Deformation.Modifiers.Deformers
             }
         }
 
+        public void Deform(Span<Vertex> vertices)
+        {
+            if (_lattice is null || !HasChanges)
+            {
+                return;
+            }
+
+            var bounds = _lattice.Bounds;
+            var controlPoints = _lattice.ControlPointBuffer;
+            var latticeSize = _lattice.Bounds.Size;
+
+            for (var index = 0; index < vertices.Length; index++)
+            {
+                Span<float> basisX = stackalloc float[_resolutionX];
+                Span<float> basisY = stackalloc float[_resolutionY];
+                Span<float> basisZ = stackalloc float[_resolutionZ];
+                Span<float> derivativeX = stackalloc float[_resolutionX];
+                Span<float> derivativeY = stackalloc float[_resolutionY];
+                Span<float> derivativeZ = stackalloc float[_resolutionZ];
+
+                var parameters = CalculateParameters(vertices[index].Position, bounds);
+
+                FillBernsteinBasisAndDerivative(_resolutionX - 1, parameters.X, basisX, derivativeX);
+                FillBernsteinBasisAndDerivative(_resolutionY - 1, parameters.Y, basisY, derivativeY);
+                FillBernsteinBasisAndDerivative(_resolutionZ - 1, parameters.Z, basisZ, derivativeZ);
+
+                vertices[index] = DeformVertex(
+                    vertices[index],
+                    controlPoints,
+                    _resolutionX,
+                    _resolutionY,
+                    _resolutionZ,
+                    basisX,
+                    basisY,
+                    basisZ,
+                    derivativeX,
+                    derivativeY,
+                    derivativeZ,
+                    latticeSize);
+            }
+        }
+
         #endregion
 
         #region Private Logic

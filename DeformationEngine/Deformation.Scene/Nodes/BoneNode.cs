@@ -1,26 +1,34 @@
 using Deformation.Abstractions.Skinning;
+using OpenTK.Mathematics;
 
 namespace Deformation.Scene.Nodes
 {
     public sealed class BoneNode : MeshNode
     {
         private bool _isSynchronizing;
+        private Matrix4 _manualLocalTransform;
 
         public BoneNode(Bone bone)
         {
             Bone = bone;
+            _manualLocalTransform = bone.LocalTransform;
             ApplyBoneTransform();
         }
 
         public Bone Bone { get; }
 
+        public override Matrix4 LocalTransform => _manualLocalTransform;
+
         public void ApplyBoneTransform()
         {
             _isSynchronizing = true;
 
-            Translation = Bone.LocalTransform.ExtractTranslation();
-            Rotation = Bone.LocalTransform.ExtractRotation();
-            Scale = Bone.LocalTransform.ExtractScale();
+            _manualLocalTransform = Bone.LocalTransform;
+            InvalidateLocalTransform();
+
+            Translation = _manualLocalTransform.ExtractTranslation();
+            Rotation = _manualLocalTransform.ExtractRotation();
+            Scale = _manualLocalTransform.ExtractScale();
 
             _isSynchronizing = false;
         }
@@ -34,7 +42,8 @@ namespace Deformation.Scene.Nodes
                 return;
             }
 
-            Bone.LocalTransform = LocalTransform;
+            _manualLocalTransform = base.LocalTransform;
+            Bone.LocalTransform = _manualLocalTransform;
         }
     }
 }

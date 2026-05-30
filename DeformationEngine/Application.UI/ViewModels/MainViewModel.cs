@@ -481,6 +481,88 @@ namespace Application.UI.ViewModels
                 Skinning = currentDeformed.Skinning
             };
 
+            if (_activeMeshNode.Mesh?.Skinning is { } skinning)
+            {
+                var skeleton = skinning.Skeleton;
+                skeleton.UpdateWorldTransforms();
+
+                var boneVertices = new Vertex[skeleton.Bones.Count * 4];
+                var epsilon = 0.01f;
+
+                for (var index = 0; index < skeleton.Bones.Count; index++)
+                {
+                    var bone = skeleton.Bones[index];
+                    var wt = bone.WorldTransform;
+                    var pos = wt.ExtractTranslation();
+                    var xAxis = wt.Row0.Xyz;
+                    var yAxis = wt.Row1.Xyz;
+                    var zAxis = wt.Row2.Xyz;
+
+                    boneVertices[index * 4 + 0] = new Vertex(pos);
+                    boneVertices[index * 4 + 1] = new Vertex(pos + xAxis * epsilon);
+                    boneVertices[index * 4 + 2] = new Vertex(pos + yAxis * epsilon);
+                    boneVertices[index * 4 + 3] = new Vertex(pos + zAxis * epsilon);
+                }
+
+                _activeMeshNode.Mesh.CalculateBounds(out var min, out var max);
+
+                Deformers.TwistDeformer.Deform(boneVertices, min, max);
+                Deformers.BendDeformer.Deform(boneVertices, min, max);
+                Deformers.FfdDeformer.Deform(boneVertices);
+
+                var newWorldTransforms = new Matrix4[skeleton.Bones.Count];
+
+                for (var index = 0; index < skeleton.Bones.Count; index++)
+                {
+                    var p0 = boneVertices[index * 4 + 0].Position;
+                    var p1 = boneVertices[index * 4 + 1].Position;
+                    var p2 = boneVertices[index * 4 + 2].Position;
+                    var p3 = boneVertices[index * 4 + 3].Position;
+
+                    var newPos = worldMatrix.TransformPoint(p0);
+                    var newX = worldMatrix.TransformPoint(p1) - newPos;
+                    var newY = worldMatrix.TransformPoint(p2) - newPos;
+                    var newZ = worldMatrix.TransformPoint(p3) - newPos;
+
+                    var scaleX = newX.Length / epsilon;
+                    var scaleY = newY.Length / epsilon;
+                    var scaleZ = newZ.Length / epsilon;
+
+                    newX.Normalize();
+                    newY = (newY - newX * Vector3.Dot(newY, newX)).Normalized();
+                    newZ = Vector3.Cross(newX, newY).Normalized();
+
+                    newX *= scaleX;
+                    newY *= scaleY;
+                    newZ *= scaleZ;
+
+                    var newWt = new Matrix4(
+                        new Vector4(newX, 0f),
+                        new Vector4(newY, 0f),
+                        new Vector4(newZ, 0f),
+                        new Vector4(newPos, 1f)
+                    );
+
+                    newWorldTransforms[index] = newWt;
+                }
+
+                for (var index = 0; index < skeleton.Bones.Count; index++)
+                {
+                    var bone = skeleton.Bones[index];
+
+                    if (bone.ParentIndex is int parentIndex)
+                    {
+                        var parentWt = newWorldTransforms[parentIndex];
+                        var invParentWt = parentWt.Inverted();
+                        bone.LocalTransform = newWorldTransforms[index] * invParentWt;
+                    }
+                    else
+                    {
+                        bone.LocalTransform = newWorldTransforms[index];
+                    }
+                }
+            }
+
             _activeMeshNode.Translation = Vector3.Zero;
             _activeMeshNode.Rotation = Quaternion.Identity;
             _activeMeshNode.Scale = Vector3.One;
@@ -489,9 +571,9 @@ namespace Application.UI.ViewModels
             Deformers.BendAngle = 0f;
             ClearFfdState();
 
-            if (_activeMeshNode.Mesh?.Skinning is { } skinning)
+            if (_activeMeshNode.Mesh?.Skinning is { } updatedSkinning)
             {
-                skinning.Skeleton.RebindToCurrentPose();
+                updatedSkinning.Skeleton.RebindToCurrentPose();
                 SyncBoneNodesToSkeleton();
                 Deformers.IsLbsEnabled = SelectedMode == DeformationMode.LinearBlendSkinning;
             }

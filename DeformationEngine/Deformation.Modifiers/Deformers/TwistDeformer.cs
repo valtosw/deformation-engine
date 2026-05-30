@@ -28,6 +28,15 @@ namespace Deformation.Modifiers.Deformers
             }
 
             mesh.CalculateBounds(out var min, out var max);
+            Deform(mesh.Vertices, min, max);
+        }
+
+        public void Deform(Span<Vertex> vertices, Vector3 min, Vector3 max)
+        {
+            if (MathF.Abs(Angle) < MathConstants.ZeroTolerance)
+            {
+                return;
+            }
 
             var axisIndex = (int)Axis;
             var axis1 = (axisIndex + 1) % 3;
@@ -59,10 +68,10 @@ namespace Deformation.Modifiers.Deformers
                 }
             }
 
-            for (var index = 0; index < mesh.Vertices.Length; index++)
+            for (var index = 0; index < vertices.Length; index++)
             {
-                var position = mesh.Vertices[index].Position;
-                var normal = mesh.Vertices[index].Normal;
+                var position = vertices[index].Position;
+                var normal = vertices[index].Normal;
 
                 var relativePosition = (position[axisIndex] - pivotCoord) / length;
                 var theta = effectiveAngle * relativePosition;
@@ -85,8 +94,8 @@ namespace Deformation.Modifiers.Deformers
                 normal[axis1] = newNormalAxis1;
                 normal[axis2] = newNormalAxis2;
 
-                mesh.Vertices[index].Position = position;
-                mesh.Vertices[index].Normal = normal.Normalized();
+                vertices[index].Position = position;
+                vertices[index].Normal = normal.LengthSquared > MathConstants.LengthTolerance ? normal.Normalized() : normal;
             }
         }
 

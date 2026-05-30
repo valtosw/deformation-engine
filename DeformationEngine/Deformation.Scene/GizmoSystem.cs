@@ -229,14 +229,18 @@ namespace Deformation.Scene
                 var inverseParentTransform = parentWorldTransform.Inverted();
                 var localRotationAxis = inverseParentTransform.TransformDirection(axisDirection).Normalized();
                 var rotationDelta = Quaternion.FromAxisAngle(localRotationAxis, angle);
-                var worldRotationDelta = Quaternion.FromAxisAngle(axisDirection, angle);
-                var targetWorldPosition = TargetNode.WorldTransform.ExtractTranslation();
-                var offset = targetWorldPosition - _gizmoStartCenter;
-                var rotatedOffset = Vector3.Transform(offset, worldRotationDelta);
-                var newWorldPosition = _gizmoStartCenter + rotatedOffset;
-                var newLocalPosition = inverseParentTransform.TransformPoint(newWorldPosition);
 
-                TargetNode.Translation = newLocalPosition;
+                if (TargetNode is not BoneNode)
+                {
+                    var worldRotationDelta = Quaternion.FromAxisAngle(axisDirection, angle);
+                    var targetWorldPosition = TargetNode.WorldTransform.ExtractTranslation();
+                    var offset = targetWorldPosition - _gizmoStartCenter;
+                    var rotatedOffset = Vector3.Transform(offset, worldRotationDelta);
+                    var newWorldPosition = _gizmoStartCenter + rotatedOffset;
+                    var newLocalPosition = inverseParentTransform.TransformPoint(newWorldPosition);
+                    TargetNode.Translation = newLocalPosition;
+                }
+
                 TargetNode.Rotation = rotationDelta * TargetNode.Rotation;
             }
             else if (activeMode == GizmoMode.Translate)
@@ -279,18 +283,28 @@ namespace Deformation.Scene
                 return TargetNode.Parent.BoundingBox.Size.Length;
             }
 
+            if (TargetNode is BoneNode boneNode)
+            {
+                var parent = boneNode.Parent;
+                while (parent is not null && parent is not MeshNode { Mesh: not null })
+                {
+                    parent = parent.Parent;
+                }
+
+                return parent?.BoundingBox.Size.Length ?? 1f;
+            }
+
             return TargetNode?.BoundingBox.Size.Length ?? 1f;
         }
 
-        private float GetTargetScale(float size, SceneNode targetNode)
+        private static float GetTargetScale(float size, SceneNode targetNode)
         {
-            if (targetNode is BoneNode)
-            {
-                var diameter = BoneGizmoRadius * 2f;
-                return MathF.Max(0.01f, diameter);
-            }
+            var scaleFactor = 0.35f;
+            if (targetNode is ControlPointNode)
+                scaleFactor = 0.12f;
+            else if (targetNode is BoneNode)
+                scaleFactor = 0.15f;
 
-            var scaleFactor = targetNode is ControlPointNode ? 0.12f : 0.35f;
             return MathF.Max(0.1f, size * scaleFactor);
         }
 
