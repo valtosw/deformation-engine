@@ -283,27 +283,23 @@ namespace Deformation.Scene
                 return TargetNode.Parent.BoundingBox.Size.Length;
             }
 
-            if (TargetNode is BoneNode boneNode)
-            {
-                var parent = boneNode.Parent;
-                while (parent is not null && parent is not MeshNode { Mesh: not null })
-                {
-                    parent = parent.Parent;
-                }
-
-                return parent?.BoundingBox.Size.Length ?? 1f;
-            }
-
             return TargetNode?.BoundingBox.Size.Length ?? 1f;
         }
 
-        private static float GetTargetScale(float size, SceneNode targetNode)
+        private float GetTargetScale(float size, SceneNode targetNode)
         {
+            if (targetNode is BoneNode)
+            {
+                var tightWrapScale = BoneGizmoRadius * 1.15f;
+                return MathF.Max(0.01f, tightWrapScale);
+            }
+
             var scaleFactor = 0.35f;
+
             if (targetNode is ControlPointNode)
+            {
                 scaleFactor = 0.12f;
-            else if (targetNode is BoneNode)
-                scaleFactor = 0.15f;
+            }
 
             return MathF.Max(0.1f, size * scaleFactor);
         }
