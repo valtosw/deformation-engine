@@ -5,6 +5,7 @@
         Basic,
         Twist,
         Bend,
-        Ffd
+        Ffd,
+        LinearBlendSkinning
     }
 }

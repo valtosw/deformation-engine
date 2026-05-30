@@ -126,7 +126,7 @@ namespace Application.UI.Windows
         {
             var openFileDialog = new OpenFileDialog
             {
-                Filter = "3D Models (*.obj;*.stl)|*.obj;*.stl|All files (*.*)|*.*",
+                Filter = "3D Models (*.obj;*.stl;*.gltf;*.glb;*.dae)|*.obj;*.stl;*.gltf;*.glb;*.dae|All files (*.*)|*.*",
                 Title = "Select a 3D Model"
             };
 

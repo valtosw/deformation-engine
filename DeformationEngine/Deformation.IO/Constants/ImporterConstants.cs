@@ -13,5 +13,16 @@
         {
             public const string Extension = ".obj";
         }
+
+        public static class Gltf
+        {
+            public const string TextExtension = ".gltf";
+            public const string BinaryExtension = ".glb";
+        }
+
+        public static class Collada
+        {
+            public const string Extension = ".dae";
+        }
     }
 }

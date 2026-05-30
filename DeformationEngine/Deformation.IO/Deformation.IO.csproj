@@ -10,4 +10,9 @@
     <ProjectReference Include="..\Deformation.Abstractions\Deformation.Abstractions.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="AssimpNet" Version="4.1.0" />
+    <PackageReference Include="SharpGLTF.Toolkit" Version="1.0.6" />
+  </ItemGroup>
+
 </Project>

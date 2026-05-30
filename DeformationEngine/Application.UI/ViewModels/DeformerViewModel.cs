@@ -31,6 +31,7 @@ namespace Application.UI.ViewModels
         public TwistDeformer TwistDeformer { get; } = new();
         public BendDeformer BendDeformer { get; } = new();
         public FfdDeformer FfdDeformer { get; } = new();
+        public LbsDeformer LbsDeformer { get; } = new();
 
         public static IEnumerable<Axis> AvailableAxes => Enum.GetValues<Axis>();
         public static int MinimumFfdResolution => FfdDeformer.MinimumResolution;
@@ -63,6 +64,22 @@ namespace Application.UI.ViewModels
                     BendDeformer.PreventSelfIntersection = value;
                     ApplyDeformations();
                 }
+            }
+        }
+
+        public bool IsLbsEnabled
+        {
+            get => LbsDeformer.IsEnabled;
+            set
+            {
+                if (LbsDeformer.IsEnabled == value)
+                {
+                    return;
+                }
+
+                LbsDeformer.IsEnabled = value;
+                OnPropertyChanged();
+                ApplyDeformations();
             }
         }
 

@@ -20,10 +20,13 @@ namespace Application.UI.ViewModels
 
         private readonly IMeshImporterFactory _meshImporterFactory;
         private readonly List<ControlPointNode> _ffdControlPoints = [];
+        private readonly List<BoneNode> _boneNodes = [];
 
         private MeshNode? _activeMeshNode;
         private MeshNode? _latticeNode;
+        private MeshNode? _skeletonLineNode;
         private bool _hasModel;
+        private bool _hasSkinning;
         private DeformationMode _selectedMode = DeformationMode.Basic;
 
         #endregion
@@ -41,6 +44,7 @@ namespace Application.UI.ViewModels
 
             Engine.RegisterController(new CameraKeyboardController(CameraSystem, Engine));
             Engine.RegisterController(new FfdSelectionController(CameraSystem, GizmoSystem, () => SelectedMode == DeformationMode.Ffd, () => _ffdControlPoints));
+            Engine.RegisterController(new LbsSelectionController(CameraSystem, GizmoSystem, () => SelectedMode == DeformationMode.LinearBlendSkinning, () => _boneNodes));
             Engine.RegisterController(new GizmoController(GizmoSystem, CameraSystem));
             Engine.RegisterController(new CameraMouseController(CameraSystem));
 
@@ -75,6 +79,18 @@ namespace Application.UI.ViewModels
             }
         }
 
+        public bool HasSkinning
+        {
+            get => _hasSkinning;
+            private set
+            {
+                if (SetProperty(ref _hasSkinning, value))
+                {
+                    OnPropertyChanged(nameof(AvailableModes));
+                }
+            }
+        }
+
         public DeformationMode SelectedMode
         {
             get
@@ -85,6 +101,12 @@ namespace Application.UI.ViewModels
             {
                 if (_selectedMode == value)
                 {
+                    return;
+                }
+
+                if (value == DeformationMode.LinearBlendSkinning && !HasSkinning)
+                {
+                    OnPropertyChanged();
                     return;
                 }
 
@@ -113,6 +135,7 @@ namespace Application.UI.ViewModels
                 OnPropertyChanged(nameof(TwistPanelVisibility));
                 OnPropertyChanged(nameof(BendPanelVisibility));
                 OnPropertyChanged(nameof(FfdPanelVisibility));
+                OnPropertyChanged(nameof(LbsPanelVisibility));
             }
         }
 
@@ -148,11 +171,19 @@ namespace Application.UI.ViewModels
             }
         }
 
-        public static IEnumerable<DeformationMode> AvailableModes
+        public Visibility LbsPanelVisibility
         {
             get
             {
-                return Enum.GetValues<DeformationMode>();
+                return SelectedMode == DeformationMode.LinearBlendSkinning ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+
+        public IEnumerable<DeformationMode> AvailableModes
+        {
+            get
+            {
+                return Enum.GetValues<DeformationMode>().Where(mode => mode != DeformationMode.LinearBlendSkinning || HasSkinning);
             }
         }
 
@@ -172,6 +203,12 @@ namespace Application.UI.ViewModels
 
         public void Render(float deltaTime)
         {
+            if (SelectedMode == DeformationMode.LinearBlendSkinning)
+            {
+                UpdateSkeletonLinesFromBones();
+                _activeMeshNode?.ApplyDeformers();
+            }
+
             Engine.UpdateAndRender(deltaTime, CameraSystem.ViewMatrix, CameraSystem.ProjectionMatrix);
         }
 
@@ -185,10 +222,10 @@ namespace Application.UI.ViewModels
             var extension = Path.GetExtension(filePath).ToLowerInvariant();
             var importer = _meshImporterFactory.GetImporter(extension);
 
-            using var stream = File.OpenRead(filePath);
-            var mesh = importer.Load(stream);
+            var mesh = importer.Load(filePath);
 
             ClearFfdState();
+            ClearSkeletonVisuals();
 
             if (_activeMeshNode is not null)
             {
@@ -200,6 +237,7 @@ namespace Application.UI.ViewModels
             _activeMeshNode.AddDeformer(Deformers.TwistDeformer);
             _activeMeshNode.AddDeformer(Deformers.BendDeformer);
             _activeMeshNode.AddDeformer(Deformers.FfdDeformer);
+            _activeMeshNode.AddDeformer(Deformers.LbsDeformer);
             Deformers.ActiveMeshNode = _activeMeshNode;
 
             Engine.RootNode.AddChild(_activeMeshNode);
@@ -210,7 +248,21 @@ namespace Application.UI.ViewModels
             CameraSystem.TargetSphere = BoundingSphere.FromAxisAlignedBoundingBox(_activeMeshNode.BoundingBox);
             CameraSystem.ZoomToFit();
 
+            HasSkinning = mesh.Skinning?.CanSkin == true;
+
+            if (!HasSkinning && SelectedMode == DeformationMode.LinearBlendSkinning)
+            {
+                _selectedMode = DeformationMode.Basic;
+                OnPropertyChanged(nameof(SelectedMode));
+            }
+
             HasModel = true;
+
+            if (HasSkinning)
+            {
+                SetupSkeletonVisuals(mesh);
+            }
+
             ApplySelectedModeState();
         }
 
@@ -365,6 +417,13 @@ namespace Application.UI.ViewModels
                 ResetFfdLattice();
             }
 
+            if (_activeMeshNode.Mesh?.Skinning is { } skinning)
+            {
+                skinning.Skeleton.ResetToBindPose();
+                SyncBoneNodesToSkeleton();
+                Deformers.IsLbsEnabled = false;
+            }
+
             _activeMeshNode.ApplyDeformers();
         }
 
@@ -408,7 +467,8 @@ namespace Application.UI.ViewModels
 
             var bakedMesh = new Mesh(newVertices, newIndices)
             {
-                Topology = currentDeformed.Topology
+                Topology = currentDeformed.Topology,
+                Skinning = currentDeformed.Skinning
             };
 
             _activeMeshNode.Translation = Vector3.Zero;
@@ -418,6 +478,13 @@ namespace Application.UI.ViewModels
             Deformers.TwistAngle = 0f;
             Deformers.BendAngle = 0f;
             ClearFfdState();
+
+            if (_activeMeshNode.Mesh?.Skinning is { } skinning)
+            {
+                skinning.Skeleton.RebindToCurrentPose();
+                SyncBoneNodesToSkeleton();
+                Deformers.IsLbsEnabled = false;
+            }
 
             _activeMeshNode.Mesh = bakedMesh;
             CameraSystem.TargetSphere = BoundingSphere.FromAxisAlignedBoundingBox(_activeMeshNode.BoundingBox);
@@ -436,8 +503,10 @@ namespace Application.UI.ViewModels
 
         private void ApplySelectedModeState()
         {
-            GizmoSystem.IsEnabled = _hasModel && (SelectedMode == DeformationMode.Basic || SelectedMode == DeformationMode.Ffd);
+            GizmoSystem.IsEnabled = _hasModel && (SelectedMode == DeformationMode.Basic || SelectedMode == DeformationMode.Ffd || SelectedMode == DeformationMode.LinearBlendSkinning);
             SetFfdVisualsVisible(SelectedMode == DeformationMode.Ffd);
+            SetSkeletonVisualsVisible(SelectedMode == DeformationMode.LinearBlendSkinning);
+            Deformers.IsLbsEnabled = SelectedMode == DeformationMode.LinearBlendSkinning;
 
             if (!_hasModel)
             {
@@ -459,6 +528,12 @@ namespace Application.UI.ViewModels
                 Gizmo.Mode = GizmoMode.Translate;
                 GizmoSystem.TargetNode = null;
                 SetFfdVisualsVisible(true);
+            }
+            else if (SelectedMode == DeformationMode.LinearBlendSkinning)
+            {
+                Gizmo.Mode = GizmoMode.Rotate;
+                GizmoSystem.TargetNode ??= _boneNodes.FirstOrDefault();
+                SetSkeletonVisualsVisible(true);
             }
             else
             {
@@ -556,6 +631,159 @@ namespace Application.UI.ViewModels
             }
         }
 
+        private void SetupSkeletonVisuals(Mesh mesh)
+        {
+            var skinning = mesh.Skinning;
+
+            if (skinning is null || _activeMeshNode is null)
+            {
+                return;
+            }
+
+            var radius = MathF.Max(0.01f, CameraSystem.TargetSphere.Radius * 0.02f);
+            var jointMesh = MeshFactory.CreateSphere(radius, rings: 8, segments: 12, Vector3.Zero);
+            var lineVertices = new List<Vertex>();
+            var lineIndices = new List<uint>();
+
+            var nodesByBoneIndex = new Dictionary<int, BoneNode>();
+
+            foreach (var bone in skinning.Skeleton.Bones)
+            {
+                var boneNode = new BoneNode(bone)
+                {
+                    Mesh = jointMesh,
+                    Color = new Vector3(1f, 0.85f, 0.2f),
+                    IsVisible = SelectedMode == DeformationMode.LinearBlendSkinning,
+                    IgnoreDepth = false,
+                    ForceSolid = true
+                };
+
+                nodesByBoneIndex.Add(bone.Index, boneNode);
+                _boneNodes.Add(boneNode);
+            }
+
+            foreach (var boneNode in _boneNodes)
+            {
+                if (boneNode.Bone.ParentIndex is int parentIndex && nodesByBoneIndex.TryGetValue(parentIndex, out var parentNode))
+                {
+                    parentNode.AddChild(boneNode);
+                }
+                else
+                {
+                    _activeMeshNode.AddChild(boneNode);
+                }
+            }
+
+            skinning.Skeleton.UpdateWorldTransforms();
+
+            foreach (var bone in skinning.Skeleton.Bones)
+            {
+                if (bone.ParentIndex is not int parentIndex)
+                {
+                    continue;
+                }
+
+                var parentPosition = skinning.Skeleton.Bones[parentIndex].WorldTransform.ExtractTranslation();
+                var childPosition = bone.WorldTransform.ExtractTranslation();
+                var vertexIndex = (uint)lineVertices.Count;
+
+                lineVertices.Add(new Vertex(parentPosition));
+                lineVertices.Add(new Vertex(childPosition));
+                lineIndices.Add(vertexIndex);
+                lineIndices.Add(vertexIndex + 1);
+            }
+
+            if (lineVertices.Count == 0)
+            {
+                return;
+            }
+
+            _skeletonLineNode = new MeshNode
+            {
+                Mesh = new Mesh([.. lineVertices], [.. lineIndices])
+                {
+                    Topology = MeshTopology.Lines
+                },
+                Color = new Vector3(0.15f, 0.9f, 1f),
+                IsVisible = SelectedMode == DeformationMode.LinearBlendSkinning,
+                ForceWireframe = true
+            };
+
+            _activeMeshNode.AddChild(_skeletonLineNode);
+        }
+
+        private void SyncBoneNodesToSkeleton()
+        {
+            foreach (var boneNode in _boneNodes)
+            {
+                boneNode.ApplyBoneTransform();
+            }
+        }
+
+        private void UpdateSkeletonLinesFromBones()
+        {
+            if (_activeMeshNode?.Mesh?.Skinning is not { } skinning || _skeletonLineNode?.Mesh is not { } lineMesh)
+            {
+                return;
+            }
+
+            skinning.Skeleton.UpdateWorldTransforms();
+
+            var lineVertexIndex = 0;
+
+            foreach (var bone in skinning.Skeleton.Bones)
+            {
+                if (bone.ParentIndex is not int parentIndex || lineVertexIndex + 1 >= lineMesh.Vertices.Length)
+                {
+                    continue;
+                }
+
+                lineMesh.Vertices[lineVertexIndex++].Position = skinning.Skeleton.Bones[parentIndex].WorldTransform.ExtractTranslation();
+                lineMesh.Vertices[lineVertexIndex++].Position = bone.WorldTransform.ExtractTranslation();
+            }
+
+            _skeletonLineNode.ApplyDeformers();
+        }
+
+        private void SetSkeletonVisualsVisible(bool isVisible)
+        {
+            foreach (var boneNode in _boneNodes)
+            {
+                boneNode.IsVisible = isVisible;
+            }
+
+            if (_skeletonLineNode is not null)
+            {
+                _skeletonLineNode.IsVisible = isVisible;
+            }
+
+            if (!isVisible && GizmoSystem.TargetNode is BoneNode)
+            {
+                GizmoSystem.TargetNode = null;
+            }
+        }
+
+        private void ClearSkeletonVisuals()
+        {
+            foreach (var boneNode in _boneNodes)
+            {
+                boneNode.Parent?.RemoveChild(boneNode);
+            }
+
+            _boneNodes.Clear();
+
+            if (_skeletonLineNode is not null)
+            {
+                _skeletonLineNode.Parent?.RemoveChild(_skeletonLineNode);
+                _skeletonLineNode = null;
+            }
+
+            if (GizmoSystem.TargetNode is BoneNode)
+            {
+                GizmoSystem.TargetNode = null;
+            }
+        }
+
         private void ClearFfdState()
         {
             ClearFfdVisuals();
@@ -612,7 +840,31 @@ namespace Application.UI.ViewModels
                 return Deformers.FfdDeformer.HasChanges;
             }
 
+            if (SelectedMode == DeformationMode.LinearBlendSkinning)
+            {
+                return Deformers.LbsDeformer.IsEnabled && HasSkeletonChanges();
+            }
+
             return false;
+        }
+
+        private bool HasSkeletonChanges()
+        {
+            if (_activeMeshNode?.Mesh?.Skinning is not { } skinning)
+            {
+                return false;
+            }
+
+            return skinning.Skeleton.Bones.Any(bone => !AreMatricesClose(bone.LocalTransform, bone.BindLocalTransform));
+        }
+
+        private static bool AreMatricesClose(Matrix4 left, Matrix4 right)
+        {
+            return
+                (left.Row0 - right.Row0).LengthSquared <= MathConstants.ZeroTolerance &&
+                (left.Row1 - right.Row1).LengthSquared <= MathConstants.ZeroTolerance &&
+                (left.Row2 - right.Row2).LengthSquared <= MathConstants.ZeroTolerance &&
+                (left.Row3 - right.Row3).LengthSquared <= MathConstants.ZeroTolerance;
         }
 
         #endregion

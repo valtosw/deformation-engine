@@ -10,8 +10,9 @@ namespace Deformation.IO.Importers
     {
         public string[] SupportedExtensions => [ImporterConstants.Stl.Extension];
 
-        public Mesh Load(Stream stream)
+        public Mesh Load(string filePath)
         {
+            using var stream = File.OpenRead(filePath);
             IStlParser parser = IsAsciiStl(stream)
                 ? new AsciiStlParser()
                 : new BinaryStlParser();

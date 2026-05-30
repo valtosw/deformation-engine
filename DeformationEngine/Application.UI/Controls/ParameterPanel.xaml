@@ -31,6 +31,7 @@
                     <controls:TwistDeformationPanel Visibility="{Binding TwistPanelVisibility}"/>
                     <controls:BendDeformationPanel Visibility="{Binding BendPanelVisibility}"/>
                     <controls:FfdDeformationPanel Visibility="{Binding FfdPanelVisibility}"/>
+                    <controls:LbsDeformationPanel Visibility="{Binding LbsPanelVisibility}"/>
                 </StackPanel>
             </ScrollViewer>
 

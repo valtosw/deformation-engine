@@ -10,7 +10,7 @@ namespace Deformation.IO.Importers
     {
         public string[] SupportedExtensions => [ImporterConstants.Obj.Extension];
 
-        public Mesh Load(Stream stream)
+        public Mesh Load(string filePath)
         {
             var positions = new List<Vector3>();
             var normals = new List<Vector3>();
@@ -20,6 +20,7 @@ namespace Deformation.IO.Importers
             var indices = new List<uint>();
             var vertexCache = new Dictionary<string, uint>();
 
+            using var stream = File.OpenRead(filePath);
             using var reader = new StreamReader(stream, leaveOpen: true);
             string? line;
 

@@ -31,6 +31,8 @@ namespace Application.Host
 
                 services.AddSingleton<IMeshImporter, ObjMeshImporter>();
                 services.AddSingleton<IMeshImporter, StlMeshImporter>();
+                services.AddSingleton<IMeshImporter, AssimpMeshImporter>();
+                services.AddSingleton<IMeshImporter, GltfMeshImporter>();
                 services.AddSingleton<IMeshImporterFactory, MeshImporterFactory>();
 
                 services.AddTransient<MainViewModel>();

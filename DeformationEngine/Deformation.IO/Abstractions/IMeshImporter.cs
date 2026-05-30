@@ -6,6 +6,6 @@ namespace Deformation.IO.Abstractions
     {
         string[] SupportedExtensions { get; }
 
-        Mesh Load(Stream stream);
+        Mesh Load(string filePath);
     }
 }

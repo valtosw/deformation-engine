@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Deformation.Abstractions.Enums;
+using Deformation.Abstractions.Skinning;
 
 namespace Deformation.Abstractions.Geometry
 {
@@ -10,6 +11,7 @@ namespace Deformation.Abstractions.Geometry
         public uint[] Indices { get; set; }
         public AxisAlignedBoundingBox LocalBoundingBox { get; set; }
         public MeshTopology Topology { get; set; } = MeshTopology.Triangles;
+        public SkinningData? Skinning { get; set; }
 
         public Mesh(Vertex[] vertices, uint[] indices)
         {

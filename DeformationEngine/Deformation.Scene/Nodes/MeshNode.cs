@@ -192,7 +192,8 @@ namespace Deformation.Scene.Nodes
 
             var clone = new Mesh(clonedVertices, clonedIndices)
             {
-                Topology = source.Topology
+                Topology = source.Topology,
+                Skinning = source.Skinning
             };
 
             if (source.LocalBoundingBox is not null)
