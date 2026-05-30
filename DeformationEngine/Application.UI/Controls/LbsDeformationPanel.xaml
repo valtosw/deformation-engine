@@ -4,8 +4,5 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <StackPanel>
         <TextBlock Text="Linear Blend Skinning" FontWeight="Bold" Margin="0,0,0,10"/>
-        <CheckBox Content="Enable skinning deformation"
-                  IsChecked="{Binding Deformers.IsLbsEnabled, Mode=TwoWay}"
-                  Margin="0,5,0,0"/>
     </StackPanel>
 </UserControl>

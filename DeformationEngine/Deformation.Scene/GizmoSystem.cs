@@ -27,6 +27,7 @@ namespace Deformation.Scene
         public GizmoNode GizmoNode { get; } = new();
         public bool IsEnabled { get; set; }
         public GizmoMode Mode { get; set; } = GizmoMode.Translate;
+        public float BoneGizmoRadius { get; set; }
 
         public SceneNode? TargetNode
         {
@@ -61,18 +62,16 @@ namespace Deformation.Scene
 
                 if (!_isDragging)
                 {
-                    GizmoNode.Translation = TargetNode.BoundingBox.Center;
-                    GizmoNode.Rotation = TargetNode.Rotation;
+                    GizmoNode.Translation = GetTargetCenter(TargetNode);
+                    GizmoNode.Rotation = GetTargetRotation(TargetNode);
 
                     var size = GetScaleReferenceSize();
-                    var scaleFactor = TargetNode is ControlPointNode ? 0.12f : 0.35f;
-
-                    GizmoNode.Scale = Vector3.One * MathF.Max(0.1f, size * scaleFactor);
+                    GizmoNode.Scale = Vector3.One * GetTargetScale(size, TargetNode);
                 }
                 else
                 {
-                    GizmoNode.Translation = TargetNode.BoundingBox.Center;
-                    GizmoNode.Rotation = TargetNode.Rotation;
+                    GizmoNode.Translation = GetTargetCenter(TargetNode);
+                    GizmoNode.Rotation = GetTargetRotation(TargetNode);
                 }
             }
             else
@@ -226,12 +225,19 @@ namespace Deformation.Scene
                     angle = -angle;
                 }
 
-                var rotationDelta = Quaternion.FromAxisAngle(localAxis, angle);
-                var offset = TargetNode.Translation - _gizmoStartCenter;
-                var rotatedOffset = Vector3.Transform(offset, rotationDelta);
+                var parentWorldTransform = TargetNode.Parent?.WorldTransform ?? Matrix4.Identity;
+                var inverseParentTransform = parentWorldTransform.Inverted();
+                var localRotationAxis = inverseParentTransform.TransformDirection(axisDirection).Normalized();
+                var rotationDelta = Quaternion.FromAxisAngle(localRotationAxis, angle);
+                var worldRotationDelta = Quaternion.FromAxisAngle(axisDirection, angle);
+                var targetWorldPosition = TargetNode.WorldTransform.ExtractTranslation();
+                var offset = targetWorldPosition - _gizmoStartCenter;
+                var rotatedOffset = Vector3.Transform(offset, worldRotationDelta);
+                var newWorldPosition = _gizmoStartCenter + rotatedOffset;
+                var newLocalPosition = inverseParentTransform.TransformPoint(newWorldPosition);
 
-                TargetNode.Translation = _gizmoStartCenter + rotatedOffset;
-                TargetNode.Rotation *= rotationDelta;
+                TargetNode.Translation = newLocalPosition;
+                TargetNode.Rotation = rotationDelta * TargetNode.Rotation;
             }
             else if (activeMode == GizmoMode.Translate)
             {
@@ -274,6 +280,38 @@ namespace Deformation.Scene
             }
 
             return TargetNode?.BoundingBox.Size.Length ?? 1f;
+        }
+
+        private float GetTargetScale(float size, SceneNode targetNode)
+        {
+            if (targetNode is BoneNode)
+            {
+                var diameter = BoneGizmoRadius * 2f;
+                return MathF.Max(0.01f, diameter);
+            }
+
+            var scaleFactor = targetNode is ControlPointNode ? 0.12f : 0.35f;
+            return MathF.Max(0.1f, size * scaleFactor);
+        }
+
+        private static Vector3 GetTargetCenter(SceneNode targetNode)
+        {
+            if (targetNode is BoneNode)
+            {
+                return targetNode.WorldTransform.ExtractTranslation();
+            }
+
+            return targetNode.BoundingBox.Center;
+        }
+
+        private static Quaternion GetTargetRotation(SceneNode targetNode)
+        {
+            if (targetNode is BoneNode)
+            {
+                return targetNode.WorldTransform.ExtractRotation();
+            }
+
+            return targetNode.Rotation;
         }
 
         private static Vector3 GetLocalAxis(Axis axis)
