@@ -29,6 +29,11 @@ namespace Application.UI.Windows
                 return result;
             };
 
+            ViewModel.RequestWarning = message =>
+            {
+                MessageBoxWindow.Show(this, message, "Warning");
+            };
+
             GlRenderingControl.Start(new GLWpfControlSettings
             {
                 MajorVersion = 3,

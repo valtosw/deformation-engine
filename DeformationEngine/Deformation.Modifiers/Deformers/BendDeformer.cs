@@ -29,6 +29,15 @@ namespace Deformation.Modifiers.Deformers
             }
 
             mesh.CalculateBounds(out var min, out var max);
+            Deform(mesh.Vertices, min, max);
+        }
+
+        public void Deform(Span<Vertex> vertices, Vector3 min, Vector3 max)
+        {
+            if (MathF.Abs(Angle) < MathConstants.ZeroTolerance || PrimaryAxis == BendAxis)
+            {
+                return;
+            }
 
             var primaryIndex = (int)PrimaryAxis;
             var bendIndex = (int)BendAxis;
@@ -58,10 +67,10 @@ namespace Deformation.Modifiers.Deformers
 
             var radius = length / effectiveAngle;
 
-            for (var index = 0; index < mesh.Vertices.Length; index++)
+            for (var index = 0; index < vertices.Length; index++)
             {
-                var position = mesh.Vertices[index].Position;
-                var normal = mesh.Vertices[index].Normal;
+                var position = vertices[index].Position;
+                var normal = vertices[index].Normal;
 
                 var relativePrimary = position[primaryIndex] - pivotCoord;
                 var theta = effectiveAngle * (relativePrimary / length);
@@ -84,8 +93,8 @@ namespace Deformation.Modifiers.Deformers
                 normal[primaryIndex] = newNormalPrimary;
                 normal[bendIndex] = newNormalBend;
 
-                mesh.Vertices[index].Position = position;
-                mesh.Vertices[index].Normal = normal.Normalized();
+                vertices[index].Position = position;
+                vertices[index].Normal = normal.LengthSquared > MathConstants.LengthTolerance ? normal.Normalized() : normal;
             }
         }
 

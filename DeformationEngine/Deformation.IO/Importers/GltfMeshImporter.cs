@@ -231,12 +231,23 @@ namespace Deformation.IO.Importers
                 var pendingBone = context.Bones[boneIndex];
                 var parentIndex = FindNearestBoneParentIndex(pendingBone.Node, context.BoneIndexByNodeIndex);
 
+                var ibt = pendingBone.InverseBindTransform;
+                var bindWorld = ibt.Inverted();
+                var localTransform = bindWorld;
+
+                if (parentIndex is int pIndex)
+                {
+                    var parentIbt = context.Bones[pIndex].InverseBindTransform;
+                    var parentBindWorld = parentIbt.Inverted();
+                    localTransform = bindWorld * parentBindWorld.Inverted();
+                }
+
                 bones[boneIndex] = new SkinBone(
                     boneIndex,
                     string.IsNullOrWhiteSpace(pendingBone.Node.Name) ? $"Joint {pendingBone.Node.LogicalIndex}" : pendingBone.Node.Name,
                     parentIndex,
-                    GetLocalTransformToBoneParent(pendingBone.Node, context.BoneIndexByNodeIndex),
-                    pendingBone.InverseBindTransform);
+                    localTransform,
+                    ibt);
             }
 
             foreach (var bone in bones)
@@ -265,20 +276,6 @@ namespace Deformation.IO.Importers
             }
 
             return null;
-        }
-
-        private static OpenTkMatrix4 GetLocalTransformToBoneParent(Node node, Dictionary<int, int> boneIndexByNodeIndex)
-        {
-            var transform = ToOpenTkMatrix(node.LocalMatrix);
-            var parent = node.VisualParent;
-
-            while (parent is not null && !boneIndexByNodeIndex.ContainsKey(parent.LogicalIndex))
-            {
-                transform = transform * ToOpenTkMatrix(parent.LocalMatrix);
-                parent = parent.VisualParent;
-            }
-
-            return transform;
         }
 
         private static void AddVertexWeights(

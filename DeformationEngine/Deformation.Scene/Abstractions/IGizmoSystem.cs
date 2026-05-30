@@ -10,6 +10,7 @@ namespace Deformation.Scene.Abstractions
         bool IsEnabled { get; set; }
         GizmoMode Mode { get; set; }
         SceneNode? TargetNode { get; set; }
+        float BoneGizmoRadius { get; set; }
 
         void Update(float deltaTime);
         bool StartDrag(Ray ray);

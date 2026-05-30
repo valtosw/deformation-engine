@@ -18,6 +18,14 @@ namespace Application.UI.ViewModels
     {
         #region Fields
 
+        private static readonly HashSet<string> SkinningExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".gltf",
+            ".glb",
+            ".dae",
+            ".gbd"
+        };
+
         private readonly IMeshImporterFactory _meshImporterFactory;
         private readonly List<ControlPointNode> _ffdControlPoints = [];
         private readonly List<BoneNode> _boneNodes = [];
@@ -63,6 +71,7 @@ namespace Application.UI.ViewModels
         public GizmoViewModel Gizmo { get; }
 
         public Func<string, bool>? RequestConfirmation { get; set; }
+        public Action<string>? RequestWarning { get; set; }
 
         public bool HasModel
         {
@@ -249,6 +258,7 @@ namespace Application.UI.ViewModels
             CameraSystem.ZoomToFit();
 
             HasSkinning = mesh.Skinning?.CanSkin == true;
+            WarnIfMissingSkinning(extension, HasSkinning);
 
             if (!HasSkinning && SelectedMode == DeformationMode.LinearBlendSkinning)
             {
@@ -421,7 +431,7 @@ namespace Application.UI.ViewModels
             {
                 skinning.Skeleton.ResetToBindPose();
                 SyncBoneNodesToSkeleton();
-                Deformers.IsLbsEnabled = false;
+                Deformers.IsLbsEnabled = SelectedMode == DeformationMode.LinearBlendSkinning;
             }
 
             _activeMeshNode.ApplyDeformers();
@@ -471,6 +481,88 @@ namespace Application.UI.ViewModels
                 Skinning = currentDeformed.Skinning
             };
 
+            if (_activeMeshNode.Mesh?.Skinning is { } skinning)
+            {
+                var skeleton = skinning.Skeleton;
+                skeleton.UpdateWorldTransforms();
+
+                var boneVertices = new Vertex[skeleton.Bones.Count * 4];
+                var epsilon = 0.01f;
+
+                for (var index = 0; index < skeleton.Bones.Count; index++)
+                {
+                    var bone = skeleton.Bones[index];
+                    var wt = bone.WorldTransform;
+                    var pos = wt.ExtractTranslation();
+                    var xAxis = wt.Row0.Xyz;
+                    var yAxis = wt.Row1.Xyz;
+                    var zAxis = wt.Row2.Xyz;
+
+                    boneVertices[index * 4 + 0] = new Vertex(pos);
+                    boneVertices[index * 4 + 1] = new Vertex(pos + xAxis * epsilon);
+                    boneVertices[index * 4 + 2] = new Vertex(pos + yAxis * epsilon);
+                    boneVertices[index * 4 + 3] = new Vertex(pos + zAxis * epsilon);
+                }
+
+                _activeMeshNode.Mesh.CalculateBounds(out var min, out var max);
+
+                Deformers.TwistDeformer.Deform(boneVertices, min, max);
+                Deformers.BendDeformer.Deform(boneVertices, min, max);
+                Deformers.FfdDeformer.Deform(boneVertices);
+
+                var newWorldTransforms = new Matrix4[skeleton.Bones.Count];
+
+                for (var index = 0; index < skeleton.Bones.Count; index++)
+                {
+                    var p0 = boneVertices[index * 4 + 0].Position;
+                    var p1 = boneVertices[index * 4 + 1].Position;
+                    var p2 = boneVertices[index * 4 + 2].Position;
+                    var p3 = boneVertices[index * 4 + 3].Position;
+
+                    var newPos = worldMatrix.TransformPoint(p0);
+                    var newX = worldMatrix.TransformPoint(p1) - newPos;
+                    var newY = worldMatrix.TransformPoint(p2) - newPos;
+                    var newZ = worldMatrix.TransformPoint(p3) - newPos;
+
+                    var scaleX = newX.Length / epsilon;
+                    var scaleY = newY.Length / epsilon;
+                    var scaleZ = newZ.Length / epsilon;
+
+                    newX.Normalize();
+                    newY = (newY - newX * Vector3.Dot(newY, newX)).Normalized();
+                    newZ = Vector3.Cross(newX, newY).Normalized();
+
+                    newX *= scaleX;
+                    newY *= scaleY;
+                    newZ *= scaleZ;
+
+                    var newWt = new Matrix4(
+                        new Vector4(newX, 0f),
+                        new Vector4(newY, 0f),
+                        new Vector4(newZ, 0f),
+                        new Vector4(newPos, 1f)
+                    );
+
+                    newWorldTransforms[index] = newWt;
+                }
+
+                for (var index = 0; index < skeleton.Bones.Count; index++)
+                {
+                    var bone = skeleton.Bones[index];
+
+                    if (bone.ParentIndex is int parentIndex)
+                    {
+                        var parentWt = newWorldTransforms[parentIndex];
+                        var invParentWt = parentWt.Inverted();
+                        bone.LocalTransform = newWorldTransforms[index] * invParentWt;
+                    }
+                    else
+                    {
+                        bone.LocalTransform = newWorldTransforms[index];
+                    }
+                }
+            }
+
             _activeMeshNode.Translation = Vector3.Zero;
             _activeMeshNode.Rotation = Quaternion.Identity;
             _activeMeshNode.Scale = Vector3.One;
@@ -479,11 +571,11 @@ namespace Application.UI.ViewModels
             Deformers.BendAngle = 0f;
             ClearFfdState();
 
-            if (_activeMeshNode.Mesh?.Skinning is { } skinning)
+            if (_activeMeshNode.Mesh?.Skinning is { } updatedSkinning)
             {
-                skinning.Skeleton.RebindToCurrentPose();
+                updatedSkinning.Skeleton.RebindToCurrentPose();
                 SyncBoneNodesToSkeleton();
-                Deformers.IsLbsEnabled = false;
+                Deformers.IsLbsEnabled = SelectedMode == DeformationMode.LinearBlendSkinning;
             }
 
             _activeMeshNode.Mesh = bakedMesh;
@@ -532,7 +624,7 @@ namespace Application.UI.ViewModels
             else if (SelectedMode == DeformationMode.LinearBlendSkinning)
             {
                 Gizmo.Mode = GizmoMode.Rotate;
-                GizmoSystem.TargetNode ??= _boneNodes.FirstOrDefault();
+                GizmoSystem.TargetNode = _boneNodes.FirstOrDefault();
                 SetSkeletonVisualsVisible(true);
             }
             else
@@ -642,6 +734,7 @@ namespace Application.UI.ViewModels
 
             var radius = MathF.Max(0.01f, CameraSystem.TargetSphere.Radius * 0.02f);
             var jointMesh = MeshFactory.CreateSphere(radius, rings: 8, segments: 12, Vector3.Zero);
+            GizmoSystem.BoneGizmoRadius = radius;
             var lineVertices = new List<Vertex>();
             var lineIndices = new List<uint>();
 
@@ -772,6 +865,13 @@ namespace Application.UI.ViewModels
 
             _boneNodes.Clear();
 
+            if (SelectedMode == DeformationMode.Basic && _activeMeshNode is not null)
+            {
+                GizmoSystem.TargetNode = _activeMeshNode;
+            }
+
+            GizmoSystem.BoneGizmoRadius = 0f;
+
             if (_skeletonLineNode is not null)
             {
                 _skeletonLineNode.Parent?.RemoveChild(_skeletonLineNode);
@@ -798,6 +898,8 @@ namespace Application.UI.ViewModels
             }
 
             _ffdControlPoints.Clear();
+
+            GizmoSystem.BoneGizmoRadius = 0f;
 
             if (_latticeNode is not null)
             {
@@ -856,6 +958,16 @@ namespace Application.UI.ViewModels
             }
 
             return skinning.Skeleton.Bones.Any(bone => !AreMatricesClose(bone.LocalTransform, bone.BindLocalTransform));
+        }
+
+        private void WarnIfMissingSkinning(string extension, bool hasSkinning)
+        {
+            if (hasSkinning || !SkinningExtensions.Contains(extension))
+            {
+                return;
+            }
+
+            RequestWarning?.Invoke("The loaded model does not contain skeleton or skinning data. Linear Blend Skinning is unavailable for this file.");
         }
 
         private static bool AreMatricesClose(Matrix4 left, Matrix4 right)
