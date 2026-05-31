@@ -135,7 +135,7 @@ namespace Application.UI.Views
             }
             catch (Exception exception)
             {
-                MessageBoxWindow.Show(this, $"Failed to load model:\n{exception.Message}", "Error");
+                MessageBoxWindow.Show(this, $"Failed to load model:\n{exception.Message}", "Error", MessageBoxButton.OK);
             }
         }
 

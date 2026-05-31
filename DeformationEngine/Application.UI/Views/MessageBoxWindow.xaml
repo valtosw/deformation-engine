@@ -48,8 +48,9 @@
                 <StackPanel Grid.Row="1" 
                             Orientation="Horizontal" 
                             HorizontalAlignment="Right">
-                    <Button Content="Yes" Width="80" Click="Yes_OnClick"/>
-                    <Button Content="No" Width="80" Click="No_OnClick"/>
+                    <Button x:Name="OkButton" Content="OK" Width="80" Click="Ok_OnClick" Visibility="Collapsed" Margin="5,0,0,0"/>
+                    <Button x:Name="YesButton" Content="Yes" Width="80" Click="Yes_OnClick" Visibility="Collapsed" Margin="5,0,0,0"/>
+                    <Button x:Name="NoButton" Content="No" Width="80" Click="No_OnClick" Visibility="Collapsed" Margin="5,0,0,0"/>
                 </StackPanel>
             </Grid>
         </Grid>

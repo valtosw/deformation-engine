@@ -6,11 +6,21 @@ namespace Application.UI.Views
     {
         #region Constructors
 
-        public MessageBoxWindow(string message, string title)
+        public MessageBoxWindow(string message, string title, MessageBoxButton buttons)
         {
             InitializeComponent();
             MessageText.Text = message;
             Title = title;
+
+            if (buttons == MessageBoxButton.OK)
+            {
+                OkButton.Visibility = Visibility.Visible;
+            }
+            else if (buttons == MessageBoxButton.YesNo)
+            {
+                YesButton.Visibility = Visibility.Visible;
+                NoButton.Visibility = Visibility.Visible;
+            }
         }
 
         #endregion
@@ -23,9 +33,9 @@ namespace Application.UI.Views
 
         #region Public Logic
 
-        public static bool Show(Window owner, string message, string title)
+        public static bool Show(Window owner, string message, string title, MessageBoxButton buttons)
         {
-            var window = new MessageBoxWindow(message, title)
+            var window = new MessageBoxWindow(message, title, buttons)
             {
                 Owner = owner
             };
@@ -38,6 +48,13 @@ namespace Application.UI.Views
         #endregion
 
         #region Private Logic
+
+        private void Ok_OnClick(object sender, RoutedEventArgs eventArguments)
+        {
+            Result = true;
+            DialogResult = true;
+            Close();
+        }
 
         private void Yes_OnClick(object sender, RoutedEventArgs eventArguments)
         {

@@ -104,7 +104,8 @@ namespace Application.Core.Services
             Scene.CameraSystem.ZoomToFit();
 
             HasSkinning = mesh.Skinning?.CanSkin == true;
-            if (!HasSkinning && !SkinningExtensions.Contains(extension))
+
+            if (!HasSkinning && SkinningExtensions.Contains(extension))
             {
                 WarningRequested?.Invoke("The loaded model does not contain skeleton or skinning data. Linear Blend Skinning is unavailable for this file.");
             }
