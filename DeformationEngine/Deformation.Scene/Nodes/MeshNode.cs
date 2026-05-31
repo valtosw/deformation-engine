@@ -3,6 +3,7 @@ using Deformation.Abstractions.Geometry;
 using Deformation.Modifiers.Abstractions;
 using OpenTK.Mathematics;
 using Rendering.Abstractions;
+using Rendering.Abstractions.Constants;
 
 namespace Deformation.Scene.Nodes
 {
@@ -92,10 +93,7 @@ namespace Deformation.Scene.Nodes
 
         public void NotifyGeometryChanged()
         {
-            if (_deformedMesh is not null)
-            {
-                _deformedMesh.LocalBoundingBox = AxisAlignedBoundingBox.FromPoints(_deformedMesh.Vertices.Select(vertex => vertex.Position));
-            }
+            _deformedMesh?.LocalBoundingBox = AxisAlignedBoundingBox.FromPoints(_deformedMesh.Vertices.Select(vertex => vertex.Position));
 
             _isBufferDirty = true;
             InvalidateBoundingBox();
@@ -136,8 +134,8 @@ namespace Deformation.Scene.Nodes
                 renderingContext.SetWireframeOverride(true);
             }
 
-            renderingContext.SetVector("objectColor", Color);
-            renderingContext.SetMatrix("model", WorldTransform);
+            renderingContext.SetVector(ShaderUniforms.ObjectColor, Color);
+            renderingContext.SetMatrix(ShaderUniforms.Model, WorldTransform);
             renderingContext.DrawBuffer(_bufferId.Value, IgnoreDepth);
 
             if (ForceSolid || ForceWireframe)

@@ -1,4 +1,5 @@
-﻿using Deformation.Abstractions.Enums;
+﻿using Deformation.Abstractions.Constants;
+using Deformation.Abstractions.Enums;
 using Deformation.Modifiers.Deformers;
 using Deformation.Scene.Nodes;
 
@@ -34,8 +35,15 @@ namespace Application.UI.ViewModels
         public LbsDeformer LbsDeformer { get; } = new();
 
         public static IEnumerable<Axis> AvailableAxes => Enum.GetValues<Axis>();
-        public static int MinimumFfdResolution => FfdDeformer.MinimumResolution;
-        public static int MaximumFfdResolution => FfdDeformer.MaximumResolution;
+
+        public static float MinimumTwistAngle => DeformationConstants.MinimumTwistAngle;
+        public static float MaximumTwistAngle => DeformationConstants.MaximumTwistAngle;
+
+        public static float MinimumBendAngle => DeformationConstants.MinimumBendAngle;
+        public static float MaximumBendAngle => DeformationConstants.MaximumBendAngle;
+
+        public static int MinimumFfdResolution => DeformationConstants.MinimumFfdResolution;
+        public static int MaximumFfdResolution => DeformationConstants.MaximumFfdResolution;
 
         public MeshNode? ActiveMeshNode
         {
@@ -69,7 +77,10 @@ namespace Application.UI.ViewModels
 
         public bool IsLbsEnabled
         {
-            get => LbsDeformer.IsEnabled;
+            get
+            {
+                return LbsDeformer.IsEnabled;
+            }
             set
             {
                 if (LbsDeformer.IsEnabled == value)
@@ -197,20 +208,38 @@ namespace Application.UI.ViewModels
 
         public int FfdResolutionX
         {
-            get => _ffdResolutionX;
-            set => SetProperty(ref _ffdResolutionX, ClampFfdResolution(value));
+            get
+            {
+                return _ffdResolutionX;
+            }
+            set
+            {
+                SetProperty(ref _ffdResolutionX, ClampFfdResolution(value));
+            }
         }
 
         public int FfdResolutionY
         {
-            get => _ffdResolutionY;
-            set => SetProperty(ref _ffdResolutionY, ClampFfdResolution(value));
+            get
+            {
+                return _ffdResolutionY;
+            }
+            set
+            {
+                SetProperty(ref _ffdResolutionY, ClampFfdResolution(value));
+            }
         }
 
         public int FfdResolutionZ
         {
-            get => _ffdResolutionZ;
-            set => SetProperty(ref _ffdResolutionZ, ClampFfdResolution(value));
+            get
+            {
+                return _ffdResolutionZ;
+            }
+            set
+            {
+                SetProperty(ref _ffdResolutionZ, ClampFfdResolution(value));
+            }
         }
 
         #endregion
@@ -224,7 +253,7 @@ namespace Application.UI.ViewModels
 
         private static int ClampFfdResolution(int value)
         {
-            return Math.Clamp(value, FfdDeformer.MinimumResolution, FfdDeformer.MaximumResolution);
+            return Math.Clamp(value, DeformationConstants.MinimumFfdResolution, DeformationConstants.MaximumFfdResolution);
         }
 
         #endregion

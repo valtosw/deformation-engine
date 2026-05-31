@@ -6,7 +6,9 @@ using Deformation.IO.Abstractions;
 using Deformation.IO.Importers;
 using Deformation.Scene;
 using Deformation.Scene.Abstractions;
+using Deformation.Scene.Builders;
 using Deformation.Scene.Camera;
+using Deformation.Scene.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System.Windows;
 
@@ -27,6 +29,9 @@ namespace Application.Host
                 services.AddSingleton<ICameraSystem, CameraSystem>();
                 services.AddSingleton<IGizmoSystem, GizmoSystem>();
                 services.AddSingleton<ISceneRenderer, SceneRenderer>();
+                services.AddSingleton<IMeshBakingService, MeshBakingService>();
+                services.AddSingleton<ISkeletonVisualBuilder, SkeletonVisualBuilder>();
+                services.AddSingleton<ILatticeVisualBuilder, LatticeVisualBuilder>();
                 services.AddSingleton<ControllerEngine>();
 
                 services.AddSingleton<IMeshImporter, ObjMeshImporter>();

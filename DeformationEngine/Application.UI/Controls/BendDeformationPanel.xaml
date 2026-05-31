@@ -35,7 +35,7 @@
                     TickFrequency="0.1" LargeChange="0.2"/>
 
             <TextBlock Text="Angle:" Margin="0,5,0,0"/>
-            <Slider Minimum="-6.28" Maximum="6.28" 
+            <Slider Minimum="{Binding MinimumBendAngle}" Maximum="{Binding MaximumBendAngle}" 
                     Value="{Binding BendAngle, Mode=TwoWay}" 
                     TickFrequency="0.1" LargeChange="0.5"/>
         </StackPanel>

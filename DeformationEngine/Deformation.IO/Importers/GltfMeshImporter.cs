@@ -62,7 +62,7 @@ namespace Deformation.IO.Importers
             {
                 mesh.Skinning = new SkinningData(
                     CreateSkeleton(skinContext),
-                    [.. weightsByVertex.Select(NormalizeAndLimitWeights)]);
+                    [.. weightsByVertex.Select(SkinningHelper.NormalizeAndLimitWeights)]);
             }
 
             return mesh;
@@ -130,18 +130,16 @@ namespace Deformation.IO.Importers
         }
 
         private static void AddMesh(
-            Node node,
-            SchemaMesh schemaMesh,
-            SkinContext skinContext,
-            List<Vertex> vertices,
-            List<uint> indices,
-            List<List<VertexWeight>> weightsByVertex)
+    Node node,
+    SchemaMesh schemaMesh,
+    SkinContext skinContext,
+    List<Vertex> vertices,
+    List<uint> indices,
+    List<List<VertexWeight>> weightsByVertex)
         {
             var isSkinned = node.Skin is not null && skinContext.HasSkinning;
             var worldTransform = ToOpenTkMatrix(node.WorldMatrix);
-            var normalTransform = worldTransform;
-            normalTransform.Invert();
-            normalTransform.Transpose();
+            var normalTransform = worldTransform.GetNormalMatrix();
 
             foreach (var primitive in schemaMesh.Primitives)
             {
@@ -302,35 +300,6 @@ namespace Deformation.IO.Importers
             {
                 target.Add(new VertexWeight(boneIndex, weight));
             }
-        }
-
-        private static VertexWeight[] NormalizeAndLimitWeights(List<VertexWeight> weights)
-        {
-            if (weights.Count == 0)
-            {
-                return [];
-            }
-
-            var limitedWeights = weights
-                .GroupBy(weight => weight.BoneIndex)
-                .Select(group => new VertexWeight(group.Key, group.Sum(weight => weight.Weight)))
-                .OrderByDescending(weight => weight.Weight)
-                .Take(4)
-                .ToArray();
-
-            var totalWeight = limitedWeights.Sum(weight => weight.Weight);
-
-            if (totalWeight <= MathConstants.ZeroTolerance)
-            {
-                return [];
-            }
-
-            for (var index = 0; index < limitedWeights.Length; index++)
-            {
-                limitedWeights[index] = new VertexWeight(limitedWeights[index].BoneIndex, limitedWeights[index].Weight / totalWeight);
-            }
-
-            return limitedWeights;
         }
 
         private static OpenTkVector2 ToOpenTkVector2(NumericsVector2 value)

@@ -92,7 +92,7 @@ namespace Deformation.IO.Importers
             {
                 mesh.Skinning = new SkinningData(
                     CreateSkeleton(scene, boneNames, boneIndexByName, inverseBindTransforms),
-                    [.. weightsByVertex.Select(NormalizeAndLimitWeights)]);
+                    [.. weightsByVertex.Select(SkinningHelper.NormalizeAndLimitWeights)]);
             }
 
             return mesh;
@@ -116,9 +116,7 @@ namespace Deformation.IO.Importers
             List<uint> indices)
         {
             var worldTransform = ToMatrix4(node.Transform) * parentTransform;
-            var normalTransform = worldTransform;
-            normalTransform.Invert();
-            normalTransform.Transpose();
+            var normalTransform = worldTransform.GetNormalMatrix();
 
             foreach (var meshIndex in node.MeshIndices)
             {
@@ -255,33 +253,6 @@ namespace Deformation.IO.Importers
             }
 
             return null;
-        }
-
-        private static VertexWeight[] NormalizeAndLimitWeights(List<VertexWeight> weights)
-        {
-            if (weights.Count == 0)
-            {
-                return [];
-            }
-
-            var limitedWeights = weights
-                .OrderByDescending(weight => weight.Weight)
-                .Take(4)
-                .ToArray();
-
-            var totalWeight = limitedWeights.Sum(weight => weight.Weight);
-
-            if (totalWeight <= 0f)
-            {
-                return [];
-            }
-
-            for (var index = 0; index < limitedWeights.Length; index++)
-            {
-                limitedWeights[index] = new VertexWeight(limitedWeights[index].BoneIndex, limitedWeights[index].Weight / totalWeight);
-            }
-
-            return limitedWeights;
         }
 
         private static Vector3 ToVector3(Vector3D value)

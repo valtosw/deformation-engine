@@ -1,4 +1,4 @@
-using Deformation.Abstractions.Enums;
+﻿using Deformation.Abstractions.Enums;
 using Deformation.Abstractions.Extensions;
 using Deformation.Interaction.Abstractions;
 using Deformation.Interaction.Input;
@@ -7,13 +7,14 @@ using Deformation.Scene.Nodes;
 
 namespace Deformation.Interaction
 {
-    public sealed class FfdSelectionController(
+    public sealed class NodeSelectionController<TNode>(
         ICameraSystem cameraSystem,
         IGizmoSystem gizmoSystem,
         Func<bool> isEnabled,
-        Func<IEnumerable<ControlPointNode>> controlPointProvider)
-        : IInputProcessor
+        Func<IEnumerable<TNode>> nodeProvider,
+        GizmoMode gizmoMode) : IInputProcessor where TNode : MeshNode
     {
+
         #region Public Logic
 
         public bool ProcessInput(IInputEvent inputEvent)
@@ -34,33 +35,34 @@ namespace Deformation.Interaction
             }
 
             var ray = cameraSystem.GetRay(mouseClickEvent.Position);
-            ControlPointNode? closestNode = null;
+            TNode? closestNode = null;
             var minimumDistance = float.MaxValue;
 
-            foreach (var controlPointNode in controlPointProvider())
+            foreach (var node in nodeProvider())
             {
-                if (!controlPointNode.IsVisible || controlPointNode.Mesh?.LocalBoundingBox is null)
+                if (!node.IsVisible || node.Mesh?.LocalBoundingBox is null)
                 {
                     continue;
                 }
 
-                var inverseTransform = controlPointNode.WorldTransform.Inverted();
+                var inverseTransform = node.WorldTransform.Inverted();
                 var localRay = ray.Transformed(inverseTransform);
 
-                if (localRay.Intersects(controlPointNode.Mesh.LocalBoundingBox, out var distance))
+                if (localRay.Intersects(node.Mesh.LocalBoundingBox, out var distance))
                 {
                     if (distance < minimumDistance)
                     {
                         minimumDistance = distance;
-                        closestNode = controlPointNode;
+                        closestNode = node;
                     }
                 }
             }
 
             if (closestNode is not null)
             {
-                gizmoSystem.Mode = GizmoMode.Translate;
+                gizmoSystem.Mode = gizmoMode;
                 gizmoSystem.TargetNode = closestNode;
+
                 return true;
             }
 
