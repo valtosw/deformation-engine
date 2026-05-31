@@ -90,9 +90,9 @@ namespace Application.Core.Services
 
         public void ConfigureModeVisualization(DeformationMode mode, bool hasModel)
         {
-            GizmoSystem.IsEnabled = hasModel && (mode == DeformationMode.Basic || mode == DeformationMode.Ffd || mode == DeformationMode.LinearBlendSkinning);
+            GizmoSystem.IsEnabled = hasModel && (mode == DeformationMode.Basic || mode == DeformationMode.FreeFormDeformation || mode == DeformationMode.LinearBlendSkinning);
 
-            _latticeBuilder.SetVisibility(mode == DeformationMode.Ffd);
+            _latticeBuilder.SetVisibility(mode == DeformationMode.FreeFormDeformation);
             _skeletonBuilder.SetVisibility(mode == DeformationMode.LinearBlendSkinning);
 
             if (!hasModel)
@@ -105,7 +105,7 @@ namespace Application.Core.Services
             {
                 GizmoSystem.TargetNode = _activeMeshNode;
             }
-            else if (mode == DeformationMode.Ffd)
+            else if (mode == DeformationMode.FreeFormDeformation)
             {
                 GizmoSystem.Mode = GizmoMode.Translate;
                 GizmoSystem.TargetNode = null;

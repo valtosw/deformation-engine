@@ -88,7 +88,7 @@ namespace Application.Core.Services
 
             meshNode.Mesh = newMesh;
 
-            if (currentMode == DeformationMode.Ffd)
+            if (currentMode == DeformationMode.FreeFormDeformation)
             {
                 SetupFfdLattice(meshNode, resolutionX, resolutionY, resolutionZ, sphereRadius, true);
             }
@@ -123,7 +123,7 @@ namespace Application.Core.Services
 
             meshNode.Mesh = bakedMesh;
 
-            if (currentMode == DeformationMode.Ffd)
+            if (currentMode == DeformationMode.FreeFormDeformation)
             {
                 SetupFfdLattice(meshNode, resolutionX, resolutionY, resolutionZ, sphereRadius, true);
             }
@@ -137,7 +137,7 @@ namespace Application.Core.Services
 
             var ffdDeformer = GetDeformer<FfdDeformer>();
 
-            if (currentMode == DeformationMode.Ffd && ffdDeformer.IsInitialized)
+            if (currentMode == DeformationMode.FreeFormDeformation && ffdDeformer.IsInitialized)
             {
                 ffdDeformer.Reset();
                 latticeBuilder.UpdateFromLattice(ffdDeformer);
@@ -179,7 +179,7 @@ namespace Application.Core.Services
                                                                meshNode.Scale != OpenTK.Mathematics.Vector3.One,
                 _ when currentMode == DeformationMode.Twist => Math.Abs(GetDeformer<TwistDeformer>().Angle) > MathConstants.ZeroTolerance,
                 _ when currentMode == DeformationMode.Bend => Math.Abs(GetDeformer<BendDeformer>().Angle) > MathConstants.ZeroTolerance,
-                _ when currentMode == DeformationMode.Ffd => GetDeformer<FfdDeformer>().HasChanges,
+                _ when currentMode == DeformationMode.FreeFormDeformation => GetDeformer<FfdDeformer>().HasChanges,
                 _ when currentMode == DeformationMode.LinearBlendSkinning => GetDeformer<LbsDeformer>().IsEnabled && HasSkeletonChanges(meshNode),
                 _ => false
             };

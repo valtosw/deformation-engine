@@ -48,7 +48,7 @@ namespace Application.Core.Services
             engine.RegisterController(new NodeSelectionController<ControlPointNode>(
                 Scene.CameraSystem,
                 Scene.GizmoSystem,
-                () => CurrentMode == DeformationMode.Ffd,
+                () => CurrentMode == DeformationMode.FreeFormDeformation,
                 () => _latticeBuilder.ControlPointNodes,
                 GizmoMode.Translate));
 
@@ -123,7 +123,7 @@ namespace Application.Core.Services
         {
             CurrentMode = mode;
 
-            if (mode == DeformationMode.Ffd && !Deformations.GetDeformer<FfdDeformer>().IsInitialized && Scene.ActiveMeshNode is not null)
+            if (mode == DeformationMode.FreeFormDeformation && !Deformations.GetDeformer<FfdDeformer>().IsInitialized && Scene.ActiveMeshNode is not null)
             {
                 Deformations.SetupFfdLattice(Scene.ActiveMeshNode, resolutionX, resolutionY, resolutionZ, Scene.CameraSystem.TargetSphere.Radius, true);
             }

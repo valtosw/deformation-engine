@@ -16,7 +16,7 @@ namespace Application.UI.ViewModels
 
         #region Properties
 
-        public DeformationMode Mode => DeformationMode.Ffd;
+        public DeformationMode Mode => DeformationMode.FreeFormDeformation;
         public static int MinimumFfdResolution => DeformationConstants.MinimumFfdResolution;
         public static int MaximumFfdResolution => DeformationConstants.MaximumFfdResolution;
 
