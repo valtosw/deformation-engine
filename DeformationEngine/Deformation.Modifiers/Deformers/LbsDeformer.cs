@@ -64,14 +64,9 @@ namespace Deformation.Modifiers.Deformers
                 var inverseWeight = 1f / totalWeight;
                 skinnedPosition *= inverseWeight;
 
-                if (skinnedNormal.LengthSquared > MathConstants.LengthTolerance)
-                {
-                    skinnedNormal = (skinnedNormal * inverseWeight).Normalized();
-                }
-                else
-                {
-                    skinnedNormal = vertex.Normal;
-                }
+                skinnedNormal = skinnedNormal.LengthSquared > MathConstants.LengthTolerance
+                    ? (skinnedNormal * inverseWeight).Normalized()
+                    : vertex.Normal;
 
                 mesh.Vertices[vertexIndex] = new Vertex(skinnedPosition, skinnedNormal, vertex.TexCoords);
             }
