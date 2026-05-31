@@ -48,13 +48,10 @@ namespace Deformation.Interaction
                 var inverseTransform = node.WorldTransform.Inverted();
                 var localRay = ray.Transformed(inverseTransform);
 
-                if (localRay.Intersects(node.Mesh.LocalBoundingBox, out var distance))
+                if (localRay.Intersects(node.Mesh.LocalBoundingBox, out var distance) && distance < minimumDistance)
                 {
-                    if (distance < minimumDistance)
-                    {
-                        minimumDistance = distance;
-                        closestNode = node;
-                    }
+                    minimumDistance = distance;
+                    closestNode = node;
                 }
             }
 
