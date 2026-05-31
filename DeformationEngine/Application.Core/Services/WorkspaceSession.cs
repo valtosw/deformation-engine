@@ -3,6 +3,7 @@ using Deformation.Abstractions.Enums;
 using Deformation.Abstractions.Geometry;
 using Deformation.Interaction;
 using Deformation.IO.Abstractions;
+using Deformation.Modifiers.Deformers;
 using Deformation.Scene.Abstractions;
 using Deformation.Scene.Nodes;
 
@@ -92,7 +93,7 @@ namespace Application.Core.Services
             var mesh = importer.Load(filePath);
 
             _latticeBuilder.Clear();
-            Deformations.FfdDeformer.Clear();
+            Deformations.GetDeformer<FfdDeformer>().Clear();
             _skeletonBuilder.Clear(CurrentMode == DeformationMode.Basic ? Scene.ActiveMeshNode : null);
 
             var activeMeshNode = new MeshNode { Mesh = mesh };
@@ -122,7 +123,7 @@ namespace Application.Core.Services
         {
             CurrentMode = mode;
 
-            if (mode == DeformationMode.Ffd && !Deformations.FfdDeformer.IsInitialized && Scene.ActiveMeshNode is not null)
+            if (mode == DeformationMode.Ffd && !Deformations.GetDeformer<FfdDeformer>().IsInitialized && Scene.ActiveMeshNode is not null)
             {
                 Deformations.SetupFfdLattice(Scene.ActiveMeshNode, resolutionX, resolutionY, resolutionZ, Scene.CameraSystem.TargetSphere.Radius, true);
             }

@@ -22,17 +22,6 @@ namespace Application.UI.Views
             ViewModel = viewModel;
             DataContext = viewModel;
 
-            ViewModel.RequestConfirmation = message =>
-            {
-                var result = MessageBoxWindow.Show(this, message, "Confirm");
-                return result;
-            };
-
-            ViewModel.RequestWarning = message =>
-            {
-                MessageBoxWindow.Show(this, message, "Warning");
-            };
-
             GlRenderingControl.Start(new GLWpfControlSettings
             {
                 MajorVersion = 3,
@@ -54,6 +43,7 @@ namespace Application.UI.Views
         {
             base.OnClosed(eventArguments);
             GlRenderingControl.Dispose();
+            ViewModel.Dispose();
         }
 
         private void GlRenderingControl_OnReady()

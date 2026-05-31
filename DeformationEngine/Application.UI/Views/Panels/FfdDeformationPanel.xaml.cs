@@ -12,7 +12,7 @@ namespace Application.UI.Views.Panels
 
         private void GenerateLattice_OnClick(object sender, RoutedEventArgs eventArguments)
         {
-            if (DataContext is MainViewModel viewModel)
+            if (DataContext is FfdDeformerViewModel viewModel)
             {
                 viewModel.SetupFfdLattice();
             }
@@ -20,7 +20,7 @@ namespace Application.UI.Views.Panels
 
         private void SubdivideMesh_OnClick(object sender, RoutedEventArgs eventArguments)
         {
-            if (DataContext is MainViewModel viewModel)
+            if (DataContext is FfdDeformerViewModel viewModel)
             {
                 viewModel.SubdivideActiveMesh();
             }

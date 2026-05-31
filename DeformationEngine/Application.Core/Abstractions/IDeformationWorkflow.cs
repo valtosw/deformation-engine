@@ -1,15 +1,15 @@
 ﻿using Deformation.Abstractions.Enums;
-using Deformation.Modifiers.Deformers;
+using Deformation.Modifiers.Abstractions;
 using Deformation.Scene.Nodes;
+using System.Collections.Generic;
 
 namespace Application.Core.Abstractions
 {
     public interface IDeformationWorkflow
     {
-        TwistDeformer TwistDeformer { get; }
-        BendDeformer BendDeformer { get; }
-        FfdDeformer FfdDeformer { get; }
-        LbsDeformer LbsDeformer { get; }
+        IEnumerable<IDeformer> Deformers { get; }
+
+        T GetDeformer<T>() where T : class, IDeformer;
 
         void AttachDeformers(MeshNode meshNode);
         void SetupFfdLattice(MeshNode meshNode, int resolutionX, int resolutionY, int resolutionZ, float sphereRadius, bool isVisible);

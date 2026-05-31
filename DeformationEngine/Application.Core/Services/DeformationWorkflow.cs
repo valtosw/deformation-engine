@@ -2,53 +2,53 @@
 using Deformation.Abstractions.Constants;
 using Deformation.Abstractions.Enums;
 using Deformation.Abstractions.Extensions;
+using Deformation.Modifiers.Abstractions;
 using Deformation.Modifiers.Deformers;
 using Deformation.Scene.Abstractions;
 using Deformation.Scene.Nodes;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Application.Core.Services
 {
-    public sealed class DeformationWorkflow : IDeformationWorkflow
+    public sealed class DeformationWorkflow(
+        IMeshBakingService meshBakingService,
+        ILatticeVisualBuilder latticeBuilder,
+        ISkeletonVisualBuilder skeletonBuilder,
+        IEnumerable<IDeformer> deformers) : IDeformationWorkflow
     {
+
         #region Fields
 
-        private readonly IMeshBakingService _meshBakingService;
-        private readonly ILatticeVisualBuilder _latticeBuilder;
-        private readonly ISkeletonVisualBuilder _skeletonBuilder;
-
-        #endregion
-
-        #region Constructors
-
-        public DeformationWorkflow(
-            IMeshBakingService meshBakingService,
-            ILatticeVisualBuilder latticeBuilder,
-            ISkeletonVisualBuilder skeletonBuilder)
-        {
-            _meshBakingService = meshBakingService;
-            _latticeBuilder = latticeBuilder;
-            _skeletonBuilder = skeletonBuilder;
-        }
+        private readonly Dictionary<Type, IDeformer> _deformers = deformers.ToDictionary(deformer => deformer.GetType());
 
         #endregion
 
         #region Properties
 
-        public TwistDeformer TwistDeformer { get; } = new();
-        public BendDeformer BendDeformer { get; } = new();
-        public FfdDeformer FfdDeformer { get; } = new();
-        public LbsDeformer LbsDeformer { get; } = new();
+        public IEnumerable<IDeformer> Deformers => _deformers.Values;
 
         #endregion
 
         #region Public Logic
 
+        public T GetDeformer<T>() where T : class, IDeformer
+        {
+            if (_deformers.TryGetValue(typeof(T), out var deformer))
+            {
+                return (T)deformer;
+            }
+
+            throw new InvalidOperationException($"Deformer of type {typeof(T).Name} is not registered.");
+        }
+
         public void AttachDeformers(MeshNode meshNode)
         {
-            meshNode.AddDeformer(TwistDeformer);
-            meshNode.AddDeformer(BendDeformer);
-            meshNode.AddDeformer(FfdDeformer);
-            meshNode.AddDeformer(LbsDeformer);
+            foreach (var deformer in _deformers.Values)
+            {
+                meshNode.AddDeformer(deformer);
+            }
         }
 
         public void SetupFfdLattice(MeshNode meshNode, int resolutionX, int resolutionY, int resolutionZ, float sphereRadius, bool isVisible)
@@ -58,12 +58,14 @@ namespace Application.Core.Services
                 return;
             }
 
-            _latticeBuilder.Clear();
-            FfdDeformer.Initialize(meshNode.Mesh, resolutionX, resolutionY, resolutionZ);
+            latticeBuilder.Clear();
 
-            _latticeBuilder.Build(
+            var ffdDeformer = GetDeformer<FfdDeformer>();
+            ffdDeformer.Initialize(meshNode.Mesh, resolutionX, resolutionY, resolutionZ);
+
+            latticeBuilder.Build(
                 meshNode,
-                FfdDeformer,
+                ffdDeformer,
                 sphereRadius,
                 isVisible,
                 meshNode.ApplyDeformers
@@ -81,8 +83,8 @@ namespace Application.Core.Services
 
             var newMesh = meshNode.Mesh.Subdivide();
 
-            _latticeBuilder.Clear();
-            FfdDeformer.Clear();
+            latticeBuilder.Clear();
+            GetDeformer<FfdDeformer>().Clear();
 
             meshNode.Mesh = newMesh;
 
@@ -95,23 +97,28 @@ namespace Application.Core.Services
         public void BakeTransformations(MeshNode meshNode, int resolutionX, int resolutionY, int resolutionZ, float sphereRadius, DeformationMode currentMode)
         {
             meshNode.ProcessPendingDeformations();
-            var bakedMesh = _meshBakingService.BakeMesh(meshNode, TwistDeformer, BendDeformer, FfdDeformer);
+
+            var twistDeformer = GetDeformer<TwistDeformer>();
+            var bendDeformer = GetDeformer<BendDeformer>();
+            var ffdDeformer = GetDeformer<FfdDeformer>();
+
+            var bakedMesh = meshBakingService.BakeMesh(meshNode, twistDeformer, bendDeformer, ffdDeformer);
 
             meshNode.Translation = OpenTK.Mathematics.Vector3.Zero;
             meshNode.Rotation = OpenTK.Mathematics.Quaternion.Identity;
             meshNode.Scale = OpenTK.Mathematics.Vector3.One;
 
-            TwistDeformer.Angle = 0f;
-            BendDeformer.Angle = 0f;
+            twistDeformer.Angle = 0f;
+            bendDeformer.Angle = 0f;
 
-            _latticeBuilder.Clear();
-            FfdDeformer.Clear();
+            latticeBuilder.Clear();
+            ffdDeformer.Clear();
 
             if (meshNode.Mesh?.Skinning is { } updatedSkinning)
             {
                 updatedSkinning.Skeleton.RebindToCurrentPose();
-                _skeletonBuilder.SyncToSkeleton();
-                LbsDeformer.IsEnabled = currentMode == DeformationMode.LinearBlendSkinning;
+                skeletonBuilder.SyncToSkeleton();
+                GetDeformer<LbsDeformer>().IsEnabled = currentMode == DeformationMode.LinearBlendSkinning;
             }
 
             meshNode.Mesh = bakedMesh;
@@ -128,16 +135,18 @@ namespace Application.Core.Services
             meshNode.Rotation = OpenTK.Mathematics.Quaternion.Identity;
             meshNode.Scale = OpenTK.Mathematics.Vector3.One;
 
-            if (currentMode == DeformationMode.Ffd && FfdDeformer.IsInitialized)
+            var ffdDeformer = GetDeformer<FfdDeformer>();
+
+            if (currentMode == DeformationMode.Ffd && ffdDeformer.IsInitialized)
             {
-                FfdDeformer.Reset();
-                _latticeBuilder.UpdateFromLattice(FfdDeformer);
+                ffdDeformer.Reset();
+                latticeBuilder.UpdateFromLattice(ffdDeformer);
             }
 
             if (meshNode.Mesh?.Skinning is { } skinning)
             {
                 skinning.Skeleton.ResetToBindPose();
-                _skeletonBuilder.SyncToSkeleton();
+                skeletonBuilder.SyncToSkeleton();
             }
 
             meshNode.ApplyDeformers();
@@ -150,12 +159,14 @@ namespace Application.Core.Services
 
         public void SetLbsEnabled(bool isEnabled, MeshNode? meshNode)
         {
-            if (LbsDeformer.IsEnabled == isEnabled)
+            var lbsDeformer = GetDeformer<LbsDeformer>();
+
+            if (lbsDeformer.IsEnabled == isEnabled)
             {
                 return;
             }
 
-            LbsDeformer.IsEnabled = isEnabled;
+            lbsDeformer.IsEnabled = isEnabled;
             meshNode?.ApplyDeformers();
         }
 
@@ -164,12 +175,12 @@ namespace Application.Core.Services
             return currentMode switch
             {
                 _ when currentMode == DeformationMode.Basic => meshNode.Translation != OpenTK.Mathematics.Vector3.Zero ||
-                                                                meshNode.Rotation != OpenTK.Mathematics.Quaternion.Identity ||
-                                                                meshNode.Scale != OpenTK.Mathematics.Vector3.One,
-                _ when currentMode == DeformationMode.Twist => Math.Abs(TwistDeformer.Angle) > MathConstants.ZeroTolerance,
-                _ when currentMode == DeformationMode.Bend => Math.Abs(BendDeformer.Angle) > MathConstants.ZeroTolerance,
-                _ when currentMode == DeformationMode.Ffd => FfdDeformer.HasChanges,
-                _ when currentMode == DeformationMode.LinearBlendSkinning => LbsDeformer.IsEnabled && HasSkeletonChanges(meshNode),
+                                                               meshNode.Rotation != OpenTK.Mathematics.Quaternion.Identity ||
+                                                               meshNode.Scale != OpenTK.Mathematics.Vector3.One,
+                _ when currentMode == DeformationMode.Twist => Math.Abs(GetDeformer<TwistDeformer>().Angle) > MathConstants.ZeroTolerance,
+                _ when currentMode == DeformationMode.Bend => Math.Abs(GetDeformer<BendDeformer>().Angle) > MathConstants.ZeroTolerance,
+                _ when currentMode == DeformationMode.Ffd => GetDeformer<FfdDeformer>().HasChanges,
+                _ when currentMode == DeformationMode.LinearBlendSkinning => GetDeformer<LbsDeformer>().IsEnabled && HasSkeletonChanges(meshNode),
                 _ => false
             };
         }

@@ -2,7 +2,8 @@
     x:Class="Application.UI.Views.Panels.ParameterPanel"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:panels="clr-namespace:Application.UI.Views.Panels">
+    xmlns:panels="clr-namespace:Application.UI.Views.Panels"
+    xmlns:viewModels="clr-namespace:Application.UI.ViewModels">
     <Border Background="{StaticResource PanelBrush}"
             BorderBrush="{StaticResource BorderBrush}"
             BorderThickness="1"
@@ -26,13 +27,25 @@
             <Separator Grid.Row="1" Margin="0,10,0,10" Background="{StaticResource BorderBrush}"/>
 
             <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
-                <StackPanel IsEnabled="{Binding HasModel}">
-                    <panels:BasicTransformationPanel Visibility="{Binding BasicPanelVisibility}"/>
-                    <panels:TwistDeformationPanel Visibility="{Binding TwistPanelVisibility}"/>
-                    <panels:BendDeformationPanel Visibility="{Binding BendPanelVisibility}"/>
-                    <panels:FfdDeformationPanel Visibility="{Binding FfdPanelVisibility}"/>
-                    <panels:LbsDeformationPanel Visibility="{Binding LbsPanelVisibility}"/>
-                </StackPanel>
+                <ContentControl Content="{Binding CurrentDeformerViewModel}" IsEnabled="{Binding HasModel}">
+                    <ContentControl.Resources>
+                        <DataTemplate DataType="{x:Type viewModels:BasicDeformationViewModel}">
+                            <panels:BasicTransformationPanel />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type viewModels:TwistDeformerViewModel}">
+                            <panels:TwistDeformationPanel />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type viewModels:BendDeformerViewModel}">
+                            <panels:BendDeformationPanel />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type viewModels:FfdDeformerViewModel}">
+                            <panels:FfdDeformationPanel />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type viewModels:LbsDeformerViewModel}">
+                            <panels:LbsDeformationPanel />
+                        </DataTemplate>
+                    </ContentControl.Resources>
+                </ContentControl>
             </ScrollViewer>
 
             <Separator Grid.Row="3" Margin="0,10,0,10" Background="{StaticResource BorderBrush}"/>

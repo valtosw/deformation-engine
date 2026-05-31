@@ -2,40 +2,47 @@ using Application.Core.Abstractions;
 using Deformation.Abstractions.Enums;
 using Deformation.Interaction.Input;
 using Rendering.Abstractions;
-using System.Windows;
 
 namespace Application.UI.ViewModels
 {
-    public sealed class MainViewModel : ViewModelBase
+    public sealed class MainViewModel : ViewModelBase, IDisposable
     {
         #region Fields
 
         private readonly IWorkspaceSession _session;
+        private readonly IDialogService _dialogService;
+        private readonly Dictionary<DeformationMode, IDeformationPanelViewModel> _panels;
+
         private DeformationMode _selectedMode = DeformationMode.Basic;
+        private IDeformationPanelViewModel _currentDeformerViewModel;
 
         #endregion
 
         #region Constructors
 
-        public MainViewModel(IWorkspaceSession session)
+        public MainViewModel(
+            IWorkspaceSession session,
+            IDialogService dialogService,
+            IEnumerable<IDeformationPanelViewModel> panels)
         {
             _session = session;
-            _session.StateChanged += OnSessionStateChanged;
-            _session.WarningRequested = message => RequestWarning?.Invoke(message);
+            _dialogService = dialogService;
+            _panels = panels.ToDictionary(panel => panel.Mode);
+            _currentDeformerViewModel = _panels[_selectedMode];
 
-            Deformers = new DeformerViewModel(_session);
-            Gizmo = new GizmoViewModel(_session.Scene.GizmoSystem);
+            _session.StateChanged += OnSessionStateChanged;
+            _session.WarningRequested = OnWarningRequested;
         }
 
         #endregion
 
         #region Properties
 
-        public DeformerViewModel Deformers { get; }
-        public GizmoViewModel Gizmo { get; }
-
-        public Func<string, bool>? RequestConfirmation { get; set; }
-        public Action<string>? RequestWarning { get; set; }
+        public IDeformationPanelViewModel CurrentDeformerViewModel
+        {
+            get => _currentDeformerViewModel;
+            private set => SetProperty(ref _currentDeformerViewModel, value);
+        }
 
         public bool HasModel => _session.HasModel;
         public bool HasSkinning => _session.HasSkinning;
@@ -59,9 +66,9 @@ namespace Application.UI.ViewModels
                 if (_session.Scene.ActiveMeshNode is not null &&
                     _session.Deformations.HasUnbakedChanges(_session.Scene.ActiveMeshNode, _selectedMode))
                 {
-                    var shouldProceed = RequestConfirmation?.Invoke("You haven't baked the deformation. Switching deformation type will discard the current unbaked changes. Do you wish to proceed?");
+                    var shouldProceed = _dialogService.ShowConfirmation("You haven't baked the deformation. Switching deformation type will discard the current unbaked changes. Do you wish to proceed?");
 
-                    if (shouldProceed != true)
+                    if (!shouldProceed)
                     {
                         System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                         {
@@ -75,25 +82,14 @@ namespace Application.UI.ViewModels
                 }
 
                 _selectedMode = value;
-                _session.SetMode(value, Deformers.FfdResolutionX, Deformers.FfdResolutionY, Deformers.FfdResolutionZ);
+                CurrentDeformerViewModel = _panels[value];
 
-                Deformers.RefreshIsLbsEnabled();
-                Gizmo.Refresh();
+                CurrentDeformerViewModel.ApplyMode(_session);
+                CurrentDeformerViewModel.OnActivated();
 
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(BasicPanelVisibility));
-                OnPropertyChanged(nameof(TwistPanelVisibility));
-                OnPropertyChanged(nameof(BendPanelVisibility));
-                OnPropertyChanged(nameof(FfdPanelVisibility));
-                OnPropertyChanged(nameof(LbsPanelVisibility));
             }
         }
-
-        public Visibility BasicPanelVisibility => SelectedMode == DeformationMode.Basic ? Visibility.Visible : Visibility.Collapsed;
-        public Visibility TwistPanelVisibility => SelectedMode == DeformationMode.Twist ? Visibility.Visible : Visibility.Collapsed;
-        public Visibility BendPanelVisibility => SelectedMode == DeformationMode.Bend ? Visibility.Visible : Visibility.Collapsed;
-        public Visibility FfdPanelVisibility => SelectedMode == DeformationMode.Ffd ? Visibility.Visible : Visibility.Collapsed;
-        public Visibility LbsPanelVisibility => SelectedMode == DeformationMode.LinearBlendSkinning ? Visibility.Visible : Visibility.Collapsed;
 
         public IEnumerable<DeformationMode> AvailableModes => Enum.GetValues<DeformationMode>().Where(mode => mode != DeformationMode.LinearBlendSkinning || HasSkinning);
 
@@ -101,9 +97,21 @@ namespace Application.UI.ViewModels
 
         #region Public Logic
 
-        public void InitializeRendering(IRenderingContext renderingContext) => _session.Scene.InitializeRendering(renderingContext);
+        public void Dispose()
+        {
+            _session.StateChanged -= OnSessionStateChanged;
+            _session.WarningRequested -= OnWarningRequested;
+        }
 
-        public void Resize(int width, int height) => _session.Scene.Resize(width, height);
+        public void InitializeRendering(IRenderingContext renderingContext)
+        {
+            _session.Scene.InitializeRendering(renderingContext);
+        }
+
+        public void Resize(int width, int height)
+        {
+            _session.Scene.Resize(width, height);
+        }
 
         public void Render(float deltaTime)
         {
@@ -115,7 +123,10 @@ namespace Application.UI.ViewModels
             }
         }
 
-        public void ProcessInput(IInputEvent inputEvent) => _session.Scene.ProcessInput(inputEvent);
+        public void ProcessInput(IInputEvent inputEvent)
+        {
+            _session.Scene.ProcessInput(inputEvent);
+        }
 
         public void LoadMesh(string filePath)
         {
@@ -127,39 +138,8 @@ namespace Application.UI.ViewModels
             }
             else
             {
-                _session.SetMode(SelectedMode, Deformers.FfdResolutionX, Deformers.FfdResolutionY, Deformers.FfdResolutionZ);
+                CurrentDeformerViewModel.ApplyMode(_session);
             }
-        }
-
-        public void SetupFfdLattice()
-        {
-            if (_session.Scene.ActiveMeshNode is not null)
-            {
-                _session.Deformations.SetupFfdLattice(_session.Scene.ActiveMeshNode, Deformers.FfdResolutionX, Deformers.FfdResolutionY, Deformers.FfdResolutionZ, _session.Scene.CameraSystem.TargetSphere.Radius, true);
-                Gizmo.Mode = GizmoMode.Translate;
-            }
-        }
-
-        public void SubdivideActiveMesh()
-        {
-            if (!HasModel || _session.Scene.ActiveMeshNode is null)
-            {
-                return;
-            }
-
-            if (_session.Deformations.HasUnbakedChanges(_session.Scene.ActiveMeshNode, SelectedMode))
-            {
-                var shouldProceed = RequestConfirmation?.Invoke("Subdividing the mesh will discard the current unbaked deformation. Do you wish to proceed?");
-
-                if (shouldProceed != true)
-                {
-                    return;
-                }
-
-                RestoreParameters();
-            }
-
-            _session.SubdivideActiveMesh(Deformers.FfdResolutionX, Deformers.FfdResolutionY, Deformers.FfdResolutionZ);
         }
 
         public void RestoreParameters()
@@ -169,9 +149,13 @@ namespace Application.UI.ViewModels
                 return;
             }
 
-            Deformers.ResetToDefaults();
+            foreach (var panel in _panels.Values)
+            {
+                panel.ResetToDefaults();
+            }
+
             _session.RestoreParameters();
-            Deformers.RefreshIsLbsEnabled();
+            CurrentDeformerViewModel.OnActivated();
         }
 
         public void BakeTransformations()
@@ -181,9 +165,14 @@ namespace Application.UI.ViewModels
                 return;
             }
 
-            _session.BakeTransformations(Deformers.FfdResolutionX, Deformers.FfdResolutionY, Deformers.FfdResolutionZ);
-            Deformers.ResetToDefaults();
-            Deformers.RefreshIsLbsEnabled();
+            CurrentDeformerViewModel.BakeTransformations(_session);
+
+            foreach (var panel in _panels.Values)
+            {
+                panel.ResetToDefaults();
+            }
+
+            CurrentDeformerViewModel.OnActivated();
         }
 
         #endregion
@@ -195,6 +184,11 @@ namespace Application.UI.ViewModels
             OnPropertyChanged(nameof(HasModel));
             OnPropertyChanged(nameof(HasSkinning));
             OnPropertyChanged(nameof(AvailableModes));
+        }
+
+        private void OnWarningRequested(string message)
+        {
+            _dialogService.ShowWarning(message);
         }
 
         #endregion

@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <StackPanel>
         <TextBlock Text="Bend Deformation" FontWeight="Bold" Margin="0,0,0,10"/>
-        <StackPanel DataContext="{Binding Deformers}">
+        <StackPanel>
             <CheckBox Content="Prevent Self-Intersections" 
                       IsChecked="{Binding PreventSelfIntersection, Mode=TwoWay}"
                       Foreground="{StaticResource TextBrush}"
