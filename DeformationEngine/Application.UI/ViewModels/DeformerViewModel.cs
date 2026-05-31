@@ -1,11 +1,10 @@
-﻿using Deformation.Abstractions.Constants;
+﻿using Application.Core.Abstractions;
+using Deformation.Abstractions.Constants;
 using Deformation.Abstractions.Enums;
-using Deformation.Modifiers.Deformers;
-using Deformation.Scene.Nodes;
 
 namespace Application.UI.ViewModels
 {
-    public sealed class DeformerViewModel : ViewModelBase
+    public sealed class DeformerViewModel(IWorkspaceSession session) : ViewModelBase
     {
         #region Fields
 
@@ -19,7 +18,6 @@ namespace Application.UI.ViewModels
         private float _bendPivot = 0.5f;
 
         private bool _preventSelfIntersection = true;
-        private MeshNode? _activeMeshNode;
 
         private int _ffdResolutionX = 3;
         private int _ffdResolutionY = 3;
@@ -28,11 +26,6 @@ namespace Application.UI.ViewModels
         #endregion
 
         #region Properties
-
-        public TwistDeformer TwistDeformer { get; } = new();
-        public BendDeformer BendDeformer { get; } = new();
-        public FfdDeformer FfdDeformer { get; } = new();
-        public LbsDeformer LbsDeformer { get; } = new();
 
         public static IEnumerable<Axis> AvailableAxes => Enum.GetValues<Axis>();
 
@@ -45,211 +38,164 @@ namespace Application.UI.ViewModels
         public static int MinimumFfdResolution => DeformationConstants.MinimumFfdResolution;
         public static int MaximumFfdResolution => DeformationConstants.MaximumFfdResolution;
 
-        public MeshNode? ActiveMeshNode
-        {
-            get
-            {
-                return _activeMeshNode;
-            }
-            set
-            {
-                _activeMeshNode = value;
-                OnPropertyChanged();
-            }
-        }
-
         public bool PreventSelfIntersection
         {
-            get
-            {
-                return _preventSelfIntersection;
-            }
+            get => _preventSelfIntersection;
             set
             {
                 if (SetProperty(ref _preventSelfIntersection, value))
                 {
-                    TwistDeformer.PreventSelfIntersection = value;
-                    BendDeformer.PreventSelfIntersection = value;
-                    ApplyDeformations();
+                    session.Deformations.TwistDeformer.PreventSelfIntersection = value;
+                    session.Deformations.BendDeformer.PreventSelfIntersection = value;
+                    session.Deformations.ApplyDeformations(session.Scene.ActiveMeshNode);
                 }
             }
         }
 
         public bool IsLbsEnabled
         {
-            get
-            {
-                return LbsDeformer.IsEnabled;
-            }
+            get => session.Deformations.LbsDeformer.IsEnabled;
             set
             {
-                if (LbsDeformer.IsEnabled == value)
+                if (session.Deformations.LbsDeformer.IsEnabled == value)
                 {
                     return;
                 }
 
-                LbsDeformer.IsEnabled = value;
+                session.Deformations.SetLbsEnabled(value, session.Scene.ActiveMeshNode);
                 OnPropertyChanged();
-                ApplyDeformations();
             }
         }
 
         public float TwistAngle
         {
-            get
-            {
-                return _twistAngle;
-            }
+            get => _twistAngle;
             set
             {
                 if (SetProperty(ref _twistAngle, value))
                 {
-                    TwistDeformer.Angle = value;
-                    ApplyDeformations();
+                    session.Deformations.TwistDeformer.Angle = value;
+                    session.Deformations.ApplyDeformations(session.Scene.ActiveMeshNode);
                 }
             }
         }
 
         public Axis TwistAxis
         {
-            get
-            {
-                return _twistAxis;
-            }
+            get => _twistAxis;
             set
             {
                 if (SetProperty(ref _twistAxis, value))
                 {
-                    TwistDeformer.Axis = value;
-                    ApplyDeformations();
+                    session.Deformations.TwistDeformer.Axis = value;
+                    session.Deformations.ApplyDeformations(session.Scene.ActiveMeshNode);
                 }
             }
         }
 
         public float TwistPivot
         {
-            get
-            {
-                return _twistPivot;
-            }
+            get => _twistPivot;
             set
             {
                 if (SetProperty(ref _twistPivot, value))
                 {
-                    TwistDeformer.Pivot = value;
-                    ApplyDeformations();
+                    session.Deformations.TwistDeformer.Pivot = value;
+                    session.Deformations.ApplyDeformations(session.Scene.ActiveMeshNode);
                 }
             }
         }
 
         public float BendAngle
         {
-            get
-            {
-                return _bendAngle;
-            }
+            get => _bendAngle;
             set
             {
                 if (SetProperty(ref _bendAngle, value))
                 {
-                    BendDeformer.Angle = value;
-                    ApplyDeformations();
+                    session.Deformations.BendDeformer.Angle = value;
+                    session.Deformations.ApplyDeformations(session.Scene.ActiveMeshNode);
                 }
             }
         }
 
         public Axis BendPrimaryAxis
         {
-            get
-            {
-                return _bendPrimaryAxis;
-            }
+            get => _bendPrimaryAxis;
             set
             {
                 if (SetProperty(ref _bendPrimaryAxis, value))
                 {
-                    BendDeformer.PrimaryAxis = value;
-                    ApplyDeformations();
+                    session.Deformations.BendDeformer.PrimaryAxis = value;
+                    session.Deformations.ApplyDeformations(session.Scene.ActiveMeshNode);
                 }
             }
         }
 
         public Axis BendAxis
         {
-            get
-            {
-                return _bendAxis;
-            }
+            get => _bendAxis;
             set
             {
                 if (SetProperty(ref _bendAxis, value))
                 {
-                    BendDeformer.BendAxis = value;
-                    ApplyDeformations();
+                    session.Deformations.BendDeformer.BendAxis = value;
+                    session.Deformations.ApplyDeformations(session.Scene.ActiveMeshNode);
                 }
             }
         }
 
         public float BendPivot
         {
-            get
-            {
-                return _bendPivot;
-            }
+            get => _bendPivot;
             set
             {
                 if (SetProperty(ref _bendPivot, value))
                 {
-                    BendDeformer.Pivot = value;
-                    ApplyDeformations();
+                    session.Deformations.BendDeformer.Pivot = value;
+                    session.Deformations.ApplyDeformations(session.Scene.ActiveMeshNode);
                 }
             }
         }
 
         public int FfdResolutionX
         {
-            get
-            {
-                return _ffdResolutionX;
-            }
-            set
-            {
-                SetProperty(ref _ffdResolutionX, ClampFfdResolution(value));
-            }
+            get => _ffdResolutionX;
+            set => SetProperty(ref _ffdResolutionX, ClampFfdResolution(value));
         }
 
         public int FfdResolutionY
         {
-            get
-            {
-                return _ffdResolutionY;
-            }
-            set
-            {
-                SetProperty(ref _ffdResolutionY, ClampFfdResolution(value));
-            }
+            get => _ffdResolutionY;
+            set => SetProperty(ref _ffdResolutionY, ClampFfdResolution(value));
         }
 
         public int FfdResolutionZ
         {
-            get
-            {
-                return _ffdResolutionZ;
-            }
-            set
-            {
-                SetProperty(ref _ffdResolutionZ, ClampFfdResolution(value));
-            }
+            get => _ffdResolutionZ;
+            set => SetProperty(ref _ffdResolutionZ, ClampFfdResolution(value));
+        }
+
+        #endregion
+
+        #region Public Logic
+
+        public void ResetToDefaults()
+        {
+            TwistAngle = 0f;
+            BendAngle = 0f;
+            TwistPivot = 0.5f;
+            BendPivot = 0.5f;
+        }
+
+        public void RefreshIsLbsEnabled()
+        {
+            OnPropertyChanged(nameof(IsLbsEnabled));
         }
 
         #endregion
 
         #region Private Logic
-
-        private void ApplyDeformations()
-        {
-            _activeMeshNode?.ApplyDeformers();
-        }
 
         private static int ClampFfdResolution(int value)
         {

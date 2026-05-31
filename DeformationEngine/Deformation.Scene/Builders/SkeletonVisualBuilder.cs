@@ -51,7 +51,7 @@ namespace Deformation.Scene.Builders
 
             foreach (var bone in skinning.Skeleton.Bones)
             {
-                var boneNode = new BoneNode(bone)
+                var boneNode = new BoneNode(bone, UpdateLines)
                 {
                     Mesh = jointMesh,
                     Color = new Vector3(1f, 0.85f, 0.2f),
@@ -120,6 +120,8 @@ namespace Deformation.Scene.Builders
             {
                 boneNode.ApplyBoneTransform();
             }
+
+            UpdateLines();
         }
 
         public void UpdateLines()

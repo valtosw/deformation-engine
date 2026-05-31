@@ -1,5 +1,7 @@
-﻿using Application.UI.ViewModels;
-using Application.UI.Windows;
+﻿using Application.Core.Abstractions;
+using Application.Core.Services;
+using Application.UI.ViewModels;
+using Application.UI.Views;
 using Deformation.Interaction;
 using Deformation.IO;
 using Deformation.IO.Abstractions;
@@ -39,6 +41,10 @@ namespace Application.Host
                 services.AddSingleton<IMeshImporter, AssimpMeshImporter>();
                 services.AddSingleton<IMeshImporter, GltfMeshImporter>();
                 services.AddSingleton<IMeshImporterFactory, MeshImporterFactory>();
+
+                services.AddSingleton<ISceneDirector, SceneDirector>();
+                services.AddSingleton<IDeformationWorkflow, DeformationWorkflow>();
+                services.AddSingleton<IWorkspaceSession, WorkspaceSession>();
 
                 services.AddTransient<MainViewModel>();
                 services.AddTransient<MainWindow>();

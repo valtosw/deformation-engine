@@ -5,13 +5,12 @@ using Microsoft.Win32;
 using OpenTK.Mathematics;
 using OpenTK.Wpf;
 using Rendering.OpenGL;
-using System;
 using System.Windows;
 using System.Windows.Input;
 using InputType = Deformation.Interaction.Input.InputType;
 using Key = Deformation.Interaction.Input.Key;
 
-namespace Application.UI.Windows
+namespace Application.UI.Views
 {
     public sealed partial class MainWindow
     {

@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace Application.UI.Windows
+namespace Application.UI.Views
 {
     public sealed partial class MessageBoxWindow
     {

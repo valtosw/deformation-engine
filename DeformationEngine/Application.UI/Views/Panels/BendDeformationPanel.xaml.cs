@@ -1,4 +1,4 @@
-﻿namespace Application.UI.Controls
+﻿namespace Application.UI.Views.Panels
 {
     public sealed partial class BendDeformationPanel
     {

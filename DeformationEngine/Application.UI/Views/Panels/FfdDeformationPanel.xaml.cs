@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 using Application.UI.ViewModels;
 
-namespace Application.UI.Controls
+namespace Application.UI.Views.Panels
 {
     public sealed partial class FfdDeformationPanel
     {

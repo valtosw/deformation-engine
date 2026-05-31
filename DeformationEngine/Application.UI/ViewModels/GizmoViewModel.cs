@@ -1,8 +1,5 @@
 ﻿using Deformation.Abstractions.Enums;
-using Deformation.Interaction;
 using Deformation.Scene.Abstractions;
-using System;
-using System.Collections.Generic;
 
 namespace Application.UI.ViewModels
 {
@@ -26,6 +23,15 @@ namespace Application.UI.ViewModels
                     OnPropertyChanged();
                 }
             }
+        }
+
+        #endregion
+
+        #region Public Logic
+
+        public void Refresh()
+        {
+            OnPropertyChanged(nameof(Mode));
         }
 
         #endregion
