@@ -6,6 +6,7 @@ using Deformation.IO.Abstractions;
 using Deformation.IO.Constants;
 using SharpGLTF.Schema2;
 using SharpGLTF.Validation;
+using System.Linq;
 using OpenTkVector2 = OpenTK.Mathematics.Vector2;
 using OpenTkVector3 = OpenTK.Mathematics.Vector3;
 using OpenTkMatrix4 = OpenTK.Mathematics.Matrix4;
@@ -248,12 +249,10 @@ namespace Deformation.IO.Importers
                     ibt);
             }
 
-            foreach (var bone in bones)
+            foreach (var bone in bones.Where(b => b.ParentIndex.HasValue))
             {
-                if (bone.ParentIndex is int parentIndex)
-                {
-                    bones[parentIndex].Children.Add(bone.Index);
-                }
+                var parentIndex = bone.ParentIndex!.Value;
+                bones[parentIndex].Children.Add(bone.Index);
             }
 
             return new Skeleton(bones);
