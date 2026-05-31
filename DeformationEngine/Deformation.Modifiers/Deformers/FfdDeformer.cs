@@ -1,5 +1,7 @@
 using Deformation.Abstractions.Constants;
+using Deformation.Abstractions.Extensions;
 using Deformation.Abstractions.Geometry;
+using Deformation.Abstractions.Math;
 using Deformation.Modifiers.Abstractions;
 using OpenTK.Mathematics;
 
@@ -8,9 +10,6 @@ namespace Deformation.Modifiers.Deformers
     public sealed class FfdDeformer : IDeformer
     {
         #region Constants
-
-        public const int MinimumResolution = 2;
-        public const int MaximumResolution = 8;
 
         private const long MaximumPrecomputedBasisFloats = 64_000_000;
 
@@ -161,9 +160,9 @@ namespace Deformation.Modifiers.Deformers
 
                 var parameters = CalculateParameters(vertices[index].Position, bounds);
 
-                FillBernsteinBasisAndDerivative(_resolutionX - 1, parameters.X, basisX, derivativeX);
-                FillBernsteinBasisAndDerivative(_resolutionY - 1, parameters.Y, basisY, derivativeY);
-                FillBernsteinBasisAndDerivative(_resolutionZ - 1, parameters.Z, basisZ, derivativeZ);
+                BernsteinPolynomial.FillBasisAndDerivative(_resolutionX - 1, parameters.X, basisX, derivativeX);
+                BernsteinPolynomial.FillBasisAndDerivative(_resolutionY - 1, parameters.Y, basisY, derivativeY);
+                BernsteinPolynomial.FillBasisAndDerivative(_resolutionZ - 1, parameters.Z, basisZ, derivativeZ);
 
                 vertices[index] = DeformVertex(
                     vertices[index],
@@ -206,19 +205,19 @@ namespace Deformation.Modifiers.Deformers
                 var parameters = CalculateParameters(originalMesh.Vertices[index].Position, bounds);
                 _vertexParameters[index] = parameters;
 
-                FillBernsteinBasisAndDerivative(
+                BernsteinPolynomial.FillBasisAndDerivative(
                     _resolutionX - 1,
                     parameters.X,
                     _basisX.AsSpan(index * _resolutionX, _resolutionX),
                     _derivativeX.AsSpan(index * _resolutionX, _resolutionX));
 
-                FillBernsteinBasisAndDerivative(
+                BernsteinPolynomial.FillBasisAndDerivative(
                     _resolutionY - 1,
                     parameters.Y,
                     _basisY.AsSpan(index * _resolutionY, _resolutionY),
                     _derivativeY.AsSpan(index * _resolutionY, _resolutionY));
 
-                FillBernsteinBasisAndDerivative(
+                BernsteinPolynomial.FillBasisAndDerivative(
                     _resolutionZ - 1,
                     parameters.Z,
                     _basisZ.AsSpan(index * _resolutionZ, _resolutionZ),
@@ -296,9 +295,9 @@ namespace Deformation.Modifiers.Deformers
 
                 var parameters = _vertexParameters[index];
 
-                FillBernsteinBasisAndDerivative(_resolutionX - 1, parameters.X, basisX, derivativeX);
-                FillBernsteinBasisAndDerivative(_resolutionY - 1, parameters.Y, basisY, derivativeY);
-                FillBernsteinBasisAndDerivative(_resolutionZ - 1, parameters.Z, basisZ, derivativeZ);
+                BernsteinPolynomial.FillBasisAndDerivative(_resolutionX - 1, parameters.X, basisX, derivativeX);
+                BernsteinPolynomial.FillBasisAndDerivative(_resolutionY - 1, parameters.Y, basisY, derivativeY);
+                BernsteinPolynomial.FillBasisAndDerivative(_resolutionZ - 1, parameters.Z, basisZ, derivativeZ);
 
                 mesh.Vertices[index] = DeformVertex(
                     mesh.Vertices[index],
@@ -362,57 +361,9 @@ namespace Deformation.Modifiers.Deformers
                 }
             }
 
-            var normal = TransformNormal(sourceVertex.Normal, derivativeS, derivativeT, derivativeU, latticeSize);
+            var normal = sourceVertex.Normal.TransformNormal(derivativeS, derivativeT, derivativeU, latticeSize);
 
             return new Vertex(position, normal, sourceVertex.TexCoords);
-        }
-
-        private static Vector3 TransformNormal(Vector3 normal, Vector3 derivativeS, Vector3 derivativeT, Vector3 derivativeU, Vector3 latticeSize)
-        {
-            if (normal.LengthSquared < MathConstants.LengthTolerance)
-            {
-                return normal;
-            }
-
-            var normalizedNormal = normal.Normalized();
-            var derivativeX = latticeSize.X > MathConstants.LengthTolerance ? derivativeS / latticeSize.X : Vector3.UnitX;
-            var derivativeY = latticeSize.Y > MathConstants.LengthTolerance ? derivativeT / latticeSize.Y : Vector3.UnitY;
-            var derivativeZ = latticeSize.Z > MathConstants.LengthTolerance ? derivativeU / latticeSize.Z : Vector3.UnitZ;
-
-            var referenceAxis = MathF.Abs(Vector3.Dot(normalizedNormal, Vector3.UnitY)) < 0.95f
-                ? Vector3.UnitY
-                : Vector3.UnitX;
-
-            var tangent = Vector3.Cross(referenceAxis, normalizedNormal);
-
-            if (tangent.LengthSquared < MathConstants.LengthTolerance)
-            {
-                return normalizedNormal;
-            }
-
-            tangent.Normalize();
-
-            var bitangent = Vector3.Cross(normalizedNormal, tangent);
-
-            if (bitangent.LengthSquared < MathConstants.LengthTolerance)
-            {
-                return normalizedNormal;
-            }
-
-            bitangent.Normalize();
-
-            var transformedTangent = TransformByGradient(tangent, derivativeX, derivativeY, derivativeZ);
-            var transformedBitangent = TransformByGradient(bitangent, derivativeX, derivativeY, derivativeZ);
-            var transformedNormal = Vector3.Cross(transformedTangent, transformedBitangent);
-
-            return transformedNormal.LengthSquared > MathConstants.LengthTolerance
-                ? transformedNormal.Normalized()
-                : normalizedNormal;
-        }
-
-        private static Vector3 TransformByGradient(Vector3 direction, Vector3 derivativeX, Vector3 derivativeY, Vector3 derivativeZ)
-        {
-            return derivativeX * direction.X + derivativeY * direction.Y + derivativeZ * direction.Z;
         }
 
         private static Vector3 CalculateParameters(Vector3 position, AxisAlignedBoundingBox bounds)
@@ -435,54 +386,9 @@ namespace Deformation.Modifiers.Deformers
             return Math.Clamp((value - min) / length, 0f, 1f);
         }
 
-        private static void FillBernsteinBasisAndDerivative(int degree, float parameter, Span<float> basis, Span<float> derivative)
-        {
-            FillBernsteinBasisOnly(degree, parameter, basis);
-            derivative.Clear();
-
-            if (degree == 0)
-            {
-                return;
-            }
-
-            Span<float> lowerDegreeBasis = stackalloc float[degree];
-            FillBernsteinBasisOnly(degree - 1, parameter, lowerDegreeBasis);
-
-            for (var index = 0; index <= degree; index++)
-            {
-                var previous = index > 0 ? lowerDegreeBasis[index - 1] : 0f;
-                var current = index < degree ? lowerDegreeBasis[index] : 0f;
-
-                derivative[index] = degree * (previous - current);
-            }
-        }
-
-        private static void FillBernsteinBasisOnly(int degree, float parameter, Span<float> basis)
-        {
-            basis.Clear();
-            basis[0] = 1f;
-
-            var t = Math.Clamp(parameter, 0f, 1f);
-            var inverseT = 1f - t;
-
-            for (var currentDegree = 1; currentDegree <= degree; currentDegree++)
-            {
-                var saved = 0f;
-
-                for (var index = 0; index < currentDegree; index++)
-                {
-                    var temporary = basis[index];
-                    basis[index] = saved + inverseT * temporary;
-                    saved = t * temporary;
-                }
-
-                basis[currentDegree] = saved;
-            }
-        }
-
         private static int ClampResolution(int resolution)
         {
-            return Math.Clamp(resolution, MinimumResolution, MaximumResolution);
+            return Math.Clamp(resolution, DeformationConstants.MinimumFfdResolution, DeformationConstants.MaximumFfdResolution);
         }
 
         #endregion

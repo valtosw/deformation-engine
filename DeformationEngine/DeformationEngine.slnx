@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="Deformation.IO/Deformation.IO.csproj" Id="bd2bec3d-2cc4-4c50-8a01-29d2742dd75b" />
+  <Project Path="Application.Core/Application.Core.csproj" Id="a2742ade-bff5-4502-a033-fe45919e2b8d" />
   <Project Path="Application.Host/Application.Host.csproj" />
   <Project Path="Deformation.Abstractions/Deformation.Abstractions.csproj" Id="dad45364-ef6c-4ad2-b799-f5f2a507b767" />
   <Project Path="Deformation.Interaction/Deformation.Interaction.csproj" Id="48b70dfb-64b3-4e26-b4c4-3d9adb6e8479" />

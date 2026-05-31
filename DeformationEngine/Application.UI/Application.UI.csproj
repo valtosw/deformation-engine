@@ -8,17 +8,18 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <None Remove="Resources\app.ico" />
+		<None Remove="Resources\app.ico" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\Deformation.IO\Deformation.IO.csproj" />
-	  <ProjectReference Include="..\Deformation.Interaction\Deformation.Interaction.csproj" />
-	  <ProjectReference Include="..\Rendering.OpenGL\Rendering.OpenGL.csproj" />
+		<ProjectReference Include="..\Application.Core\Application.Core.csproj" />
+		<ProjectReference Include="..\Deformation.IO\Deformation.IO.csproj" />
+		<ProjectReference Include="..\Deformation.Interaction\Deformation.Interaction.csproj" />
+		<ProjectReference Include="..\Rendering.OpenGL\Rendering.OpenGL.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Resource Include="Resources\Icons\app.ico" />
+		<Resource Include="Resources\Icons\app.ico" />
 	</ItemGroup>
 
 </Project>

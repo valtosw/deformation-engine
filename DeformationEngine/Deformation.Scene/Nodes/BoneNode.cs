@@ -5,19 +5,35 @@ namespace Deformation.Scene.Nodes
 {
     public sealed class BoneNode : MeshNode
     {
+        #region Fields
+
+        private readonly Action? _onTransformChanged;
         private bool _isSynchronizing;
         private Matrix4 _manualLocalTransform;
 
-        public BoneNode(Bone bone)
+        #endregion
+
+        #region Constructors
+
+        public BoneNode(Bone bone, Action? onTransformChanged = null)
         {
             Bone = bone;
+            _onTransformChanged = onTransformChanged;
             _manualLocalTransform = bone.LocalTransform;
             ApplyBoneTransform();
         }
 
+        #endregion
+
+        #region Properties
+
         public Bone Bone { get; }
 
         public override Matrix4 LocalTransform => _manualLocalTransform;
+
+        #endregion
+
+        #region Public Logic
 
         public void ApplyBoneTransform()
         {
@@ -33,6 +49,10 @@ namespace Deformation.Scene.Nodes
             _isSynchronizing = false;
         }
 
+        #endregion
+
+        #region Protected Logic
+
         protected override void OnTransformChanged()
         {
             base.OnTransformChanged();
@@ -44,6 +64,9 @@ namespace Deformation.Scene.Nodes
 
             _manualLocalTransform = base.LocalTransform;
             Bone.LocalTransform = _manualLocalTransform;
+            _onTransformChanged?.Invoke();
         }
+
+        #endregion
     }
 }

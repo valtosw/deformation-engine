@@ -3,6 +3,7 @@ using Deformation.Abstractions.Enums;
 using Deformation.Abstractions.Extensions;
 using Deformation.Abstractions.Math;
 using Deformation.Scene.Abstractions;
+using Deformation.Scene.Constants;
 using Deformation.Scene.Nodes;
 using OpenTK.Mathematics;
 
@@ -258,9 +259,9 @@ namespace Deformation.Scene
 
                 var newScale = TargetNode.Scale + localAxis * scaleMultiplier;
 
-                newScale.X = MathF.Max(0.01f, newScale.X);
-                newScale.Y = MathF.Max(0.01f, newScale.Y);
-                newScale.Z = MathF.Max(0.01f, newScale.Z);
+                newScale.X = MathF.Max(GizmoConstants.MinimumScale, newScale.X);
+                newScale.Y = MathF.Max(GizmoConstants.MinimumScale, newScale.Y);
+                newScale.Z = MathF.Max(GizmoConstants.MinimumScale, newScale.Z);
 
                 TargetNode.Scale = newScale;
             }
@@ -290,18 +291,18 @@ namespace Deformation.Scene
         {
             if (targetNode is BoneNode)
             {
-                var tightWrapScale = BoneGizmoRadius * 1.15f;
-                return MathF.Max(0.01f, tightWrapScale);
+                var tightWrapScale = BoneGizmoRadius * GizmoConstants.TightWrapScaleMultiplier;
+                return MathF.Max(GizmoConstants.MinimumScale, tightWrapScale);
             }
 
-            var scaleFactor = 0.35f;
+            var scaleFactor = GizmoConstants.DefaultScaleFactor;
 
             if (targetNode is ControlPointNode)
             {
-                scaleFactor = 0.12f;
+                scaleFactor = GizmoConstants.ControlPointScaleFactor;
             }
 
-            return MathF.Max(0.1f, size * scaleFactor);
+            return MathF.Max(GizmoConstants.MinimumVisualScale, size * scaleFactor);
         }
 
         private static Vector3 GetTargetCenter(SceneNode targetNode)

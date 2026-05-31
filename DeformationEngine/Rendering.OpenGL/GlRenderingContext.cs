@@ -2,13 +2,14 @@
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using Rendering.Abstractions;
+using Rendering.Abstractions.Constants;
 
 namespace Rendering.OpenGL
 {
     public sealed class GlRenderingContext(Shader shader) : IRenderingContext
     {
-
         #region Fields
+
         private readonly Dictionary<int, MeshBuffer> _buffers = [];
         private int _nextBufferId = 1;
 
@@ -57,7 +58,7 @@ namespace Rendering.OpenGL
         {
             var enableWireframe = isWireframe ?? IsWireframeEnabled;
             GL.PolygonMode(TriangleFace.FrontAndBack, enableWireframe ? PolygonMode.Line : PolygonMode.Fill);
-            shader.SetBool("isWireframe", enableWireframe);
+            shader.SetBool(ShaderUniforms.IsWireframe, enableWireframe);
         }
 
         public int CreateBuffer(Mesh mesh)

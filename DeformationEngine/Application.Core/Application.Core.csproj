@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Deformation.Abstractions\Deformation.Abstractions.csproj" />
+	  <ProjectReference Include="..\Deformation.Interaction\Deformation.Interaction.csproj" />
+	  <ProjectReference Include="..\Deformation.IO\Deformation.IO.csproj" />
+	  <ProjectReference Include="..\Deformation.Modifiers\Deformation.Modifiers.csproj" />
+	  <ProjectReference Include="..\Deformation.Scene\Deformation.Scene.csproj" />
+	  <ProjectReference Include="..\Rendering.Abstractions\Rendering.Abstractions.csproj" />
+	</ItemGroup>
+
+</Project>

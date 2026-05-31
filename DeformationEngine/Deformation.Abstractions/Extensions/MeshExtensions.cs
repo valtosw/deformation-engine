@@ -1,4 +1,5 @@
 ﻿using Deformation.Abstractions.Constants;
+using Deformation.Abstractions.Enums;
 using Deformation.Abstractions.Geometry;
 using OpenTK.Mathematics;
 
@@ -6,47 +7,6 @@ namespace Deformation.Abstractions.Extensions
 {
     public static class MeshExtensions
     {
-        #region Structs
-
-        private readonly struct EdgeKey : IEquatable<EdgeKey>
-        {
-            public readonly Vector3 A;
-            public readonly Vector3 B;
-
-            public EdgeKey(Vector3 a, Vector3 b)
-            {
-                if (a.X < b.X ||
-                   (System.Math.Abs(a.X - b.X) < MathConstants.ZeroTolerance && a.Y < b.Y) ||
-                   (System.Math.Abs(a.X - b.X) < MathConstants.ZeroTolerance && System.Math.Abs(a.Y - b.Y) < MathConstants.ZeroTolerance && a.Z < b.Z))
-                {
-                    A = a;
-                    B = b;
-                }
-                else
-                {
-                    A = b;
-                    B = a;
-                }
-            }
-
-            public bool Equals(EdgeKey other)
-            {
-                return A.Equals(other.A) && B.Equals(other.B);
-            }
-
-            public override int GetHashCode()
-            {
-                return HashCode.Combine(A, B);
-            }
-
-            public override bool Equals(object? obj)
-            {
-                return obj is EdgeKey key && Equals(key);
-            }
-        }
-
-        #endregion
-
         #region Public Logic
 
         public static void CalculateBounds(this Mesh mesh, out Vector3 min, out Vector3 max)
@@ -64,7 +24,7 @@ namespace Deformation.Abstractions.Extensions
 
         public static Mesh Subdivide(this Mesh mesh)
         {
-            if (mesh.Topology != Enums.MeshTopology.Triangles)
+            if (mesh.Topology != MeshTopology.Triangles)
             {
                 return mesh;
             }

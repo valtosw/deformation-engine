@@ -1,101 +1,95 @@
 ﻿using Deformation.Abstractions.Constants;
 using Deformation.Abstractions.Enums;
-using Deformation.Abstractions.Extensions;
 using Deformation.Abstractions.Geometry;
-using Deformation.Modifiers.Abstractions;
 using OpenTK.Mathematics;
 
 namespace Deformation.Modifiers.Deformers
 {
-    public sealed class BendDeformer : IDeformer
+    public sealed class BendDeformer : AxisDeformerBase
     {
-        #region Properties
+        #region Fields
 
-        public float Angle { get; set; }
-        public Axis PrimaryAxis { get; set; } = Axis.Y;
-        public Axis BendAxis { get; set; } = Axis.X;
-        public float Pivot { get; set; } = 0.5f;
-        public bool PreventSelfIntersection { get; set; } = true;
+        private int _primaryIndex;
+        private int _bendIndex;
+        private float _pivotCoord;
+        private float _bendCenter;
+        private float _radius;
 
         #endregion
 
-        #region Public Logic
+        #region Properties
 
-        public void Deform(Mesh mesh)
+        public Axis PrimaryAxis { get; set; } = Axis.Y;
+        public Axis BendAxis { get; set; } = Axis.X;
+
+        #endregion
+
+        #region Protected Logic
+
+        protected override bool IsValidSetup()
         {
-            if (MathF.Abs(Angle) < MathConstants.ZeroTolerance || PrimaryAxis == BendAxis)
-            {
-                return;
-            }
-
-            mesh.CalculateBounds(out var min, out var max);
-            Deform(mesh.Vertices, min, max);
+            return PrimaryAxis != BendAxis;
         }
 
-        public void Deform(Span<Vertex> vertices, Vector3 min, Vector3 max)
+        protected override float CalculateLength(Vector3 min, Vector3 max)
         {
-            if (MathF.Abs(Angle) < MathConstants.ZeroTolerance || PrimaryAxis == BendAxis)
-            {
-                return;
-            }
+            return max[(int)PrimaryAxis] - min[(int)PrimaryAxis];
+        }
 
-            var primaryIndex = (int)PrimaryAxis;
+        protected override float ClampAngleForSelfIntersection(float angle, float length, Vector3 min, Vector3 max)
+        {
             var bendIndex = (int)BendAxis;
+            var halfWidth = (max[bendIndex] - min[bendIndex]) * 0.5f;
 
-            var length = max[primaryIndex] - min[primaryIndex];
-
-            if (length < MathConstants.LengthTolerance)
+            if (halfWidth > MathConstants.LengthTolerance)
             {
-                return;
+                var maxSafeAngle = length / halfWidth;
+                return Math.Clamp(angle, -maxSafeAngle, maxSafeAngle);
             }
 
-            var pivotCoord = min[primaryIndex] + length * Pivot;
-            var bendCenter = (min[bendIndex] + max[bendIndex]) * 0.5f;
+            return angle;
+        }
 
-            var effectiveAngle = Angle;
+        protected override void PrepareDeformation(Vector3 min, Vector3 max, float length, float effectiveAngle)
+        {
+            _primaryIndex = (int)PrimaryAxis;
+            _bendIndex = (int)BendAxis;
 
-            if (PreventSelfIntersection)
-            {
-                var halfWidth = (max[bendIndex] - min[bendIndex]) * 0.5f;
+            _pivotCoord = min[_primaryIndex] + length * Pivot;
+            _bendCenter = (min[_bendIndex] + max[_bendIndex]) * 0.5f;
 
-                if (halfWidth > MathConstants.LengthTolerance)
-                {
-                    var maxSafeAngle = length / halfWidth;
-                    effectiveAngle = Math.Clamp(effectiveAngle, -maxSafeAngle, maxSafeAngle);
-                }
-            }
+            _radius = length / effectiveAngle;
+        }
 
-            var radius = length / effectiveAngle;
+        protected override Vertex DeformVertex(Vertex vertex, Vector3 min, Vector3 max, float effectiveAngle, float length)
+        {
+            var position = vertex.Position;
+            var normal = vertex.Normal;
 
-            for (var index = 0; index < vertices.Length; index++)
-            {
-                var position = vertices[index].Position;
-                var normal = vertices[index].Normal;
+            var relativePrimary = position[_primaryIndex] - _pivotCoord;
+            var theta = effectiveAngle * (relativePrimary / length);
 
-                var relativePrimary = position[primaryIndex] - pivotCoord;
-                var theta = effectiveAngle * (relativePrimary / length);
+            var cosTheta = MathF.Cos(theta);
+            var sinTheta = MathF.Sin(theta);
 
-                var cosTheta = MathF.Cos(theta);
-                var sinTheta = MathF.Sin(theta);
+            var localBendAxis = position[_bendIndex] - _bendCenter;
+            var distanceToCenter = _radius - localBendAxis;
 
-                var localBendAxis = position[bendIndex] - bendCenter;
-                var distanceToCenter = radius - localBendAxis;
+            var newBend = _radius - distanceToCenter * cosTheta;
+            var newPrimary = distanceToCenter * sinTheta;
 
-                var newBend = radius - distanceToCenter * cosTheta;
-                var newPrimary = distanceToCenter * sinTheta;
+            var newNormalBend = normal[_bendIndex] * cosTheta - normal[_primaryIndex] * sinTheta;
+            var newNormalPrimary = normal[_bendIndex] * sinTheta + normal[_primaryIndex] * cosTheta;
 
-                var newNormalBend = normal[bendIndex] * cosTheta - normal[primaryIndex] * sinTheta;
-                var newNormalPrimary = normal[bendIndex] * sinTheta + normal[primaryIndex] * cosTheta;
+            position[_primaryIndex] = newPrimary + _pivotCoord;
+            position[_bendIndex] = newBend + _bendCenter;
 
-                position[primaryIndex] = newPrimary + pivotCoord;
-                position[bendIndex] = newBend + bendCenter;
+            normal[_primaryIndex] = newNormalPrimary;
+            normal[_bendIndex] = newNormalBend;
 
-                normal[primaryIndex] = newNormalPrimary;
-                normal[bendIndex] = newNormalBend;
+            var finalNormal = normal.LengthSquared > MathConstants.LengthTolerance ? normal.Normalized() : normal;
 
-                vertices[index].Position = position;
-                vertices[index].Normal = normal.LengthSquared > MathConstants.LengthTolerance ? normal.Normalized() : normal;
-            }
+            return new Vertex(position, finalNormal, vertex.TexCoords);
         }
 
         #endregion
