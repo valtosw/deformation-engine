@@ -118,9 +118,8 @@ namespace Deformation.IO.Importers
             var worldTransform = ToMatrix4(node.Transform) * parentTransform;
             var normalTransform = worldTransform.GetNormalMatrix();
 
-            foreach (var meshIndex in node.MeshIndices)
+            foreach (var assimpMesh in node.MeshIndices.Select(meshIndex => scene.Meshes[meshIndex]))
             {
-                var assimpMesh = scene.Meshes[meshIndex];
                 var vertexOffset = vertices.Count;
 
                 for (var index = 0; index < assimpMesh.VertexCount; index++)
