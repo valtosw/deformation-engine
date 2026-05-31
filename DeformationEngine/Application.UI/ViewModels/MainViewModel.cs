@@ -871,12 +871,8 @@ namespace Application.UI.ViewModels
             }
 
             GizmoSystem.BoneGizmoRadius = 0f;
-
-            if (_skeletonLineNode is not null)
-            {
-                _skeletonLineNode.Parent?.RemoveChild(_skeletonLineNode);
-                _skeletonLineNode = null;
-            }
+            _skeletonLineNode?.Parent?.RemoveChild(_skeletonLineNode);
+            _skeletonLineNode = null;
 
             if (GizmoSystem.TargetNode is BoneNode)
             {
@@ -899,13 +895,8 @@ namespace Application.UI.ViewModels
 
             _ffdControlPoints.Clear();
 
-            GizmoSystem.BoneGizmoRadius = 0f;
-
-            if (_latticeNode is not null)
-            {
-                _latticeNode.Parent?.RemoveChild(_latticeNode);
-                _latticeNode = null;
-            }
+            _latticeNode?.Parent?.RemoveChild(_latticeNode);
+            _latticeNode = null;
 
             if (GizmoSystem.TargetNode is ControlPointNode)
             {
