@@ -1,4 +1,5 @@
 using OpenTK.Mathematics;
+using System.Linq;
 
 namespace Deformation.Modifiers.Deformers.Arap
 {
@@ -61,12 +62,9 @@ namespace Deformation.Modifiers.Deformers.Arap
                 _mask[controlVertex] = true;
             }
 
-            foreach (var anchorVertex in anchorVertices)
+            foreach (var anchorVertex in anchorVertices.Where(anchorVertex => !controlVertices.Contains(anchorVertex)))
             {
-                if (!controlVertices.Contains(anchorVertex))
-                {
-                    _mask[anchorVertex] = true;
-                }
+                _mask[anchorVertex] = true;
             }
 
             StabilizeUnconstrainedComponents(neighbors, originalPositions, workingPositions, constraintPositions);
