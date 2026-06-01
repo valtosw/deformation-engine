@@ -1,37 +1,43 @@
 using CSparse;
 using CSparse.Double.Factorization;
 using CSparse.Storage;
+using Deformation.Abstractions.Geometry;
 using Deformation.Abstractions.Math;
+using Deformation.Modifiers.Abstractions;
 using OpenTK.Mathematics;
 
 namespace Deformation.Modifiers.Deformers.Arap
 {
-    internal sealed class ArapExactSolver
+    internal sealed class ArapExactSolver : IArapSolver
     {
+        #region Fields
+
         private const int ParallelRotationVertexLimit = 2000;
 
         private Rotation3x3[] _rotations = [];
         private int[] _unknownIndexByVertex = [];
         private int[] _vertexIndexByUnknown = [];
         private SparseCholesky? _factorization;
-        private double[] _rhsX = [];
-        private double[] _rhsY = [];
-        private double[] _rhsZ = [];
+
+        private double[] _rightHandSideX = [];
+        private double[] _rightHandSideY = [];
+        private double[] _rightHandSideZ = [];
         private double[] _solutionX = [];
         private double[] _solutionY = [];
         private double[] _solutionZ = [];
+
         private int _factorizationVersion = -1;
         private bool _isUnavailable;
 
+        #endregion
+
+        #region Properties
+
         public bool IsUnavailable => _isUnavailable;
 
-        public void Reset(int vertexCount)
-        {
-            _rotations = new Rotation3x3[vertexCount];
-            Array.Fill(_rotations, Rotation3x3.Identity);
-            Invalidate();
-            _isUnavailable = false;
-        }
+        #endregion
+
+        #region Public Logic
 
         public void Clear()
         {
@@ -39,12 +45,14 @@ namespace Deformation.Modifiers.Deformers.Arap
             _unknownIndexByVertex = [];
             _vertexIndexByUnknown = [];
             _factorization = null;
-            _rhsX = [];
-            _rhsY = [];
-            _rhsZ = [];
+
+            _rightHandSideX = [];
+            _rightHandSideY = [];
+            _rightHandSideZ = [];
             _solutionX = [];
             _solutionY = [];
             _solutionZ = [];
+
             _factorizationVersion = -1;
             _isUnavailable = false;
         }
@@ -58,7 +66,15 @@ namespace Deformation.Modifiers.Deformers.Arap
             _isUnavailable = false;
         }
 
-        public bool TryPrepare(bool[] constrained, int[][] neighbors, int constraintVersion)
+        public void Initialize(int vertexCount)
+        {
+            _rotations = new Rotation3x3[vertexCount];
+            Array.Fill(_rotations, Rotation3x3.Identity);
+
+            Invalidate();
+        }
+
+        public bool TryPrepare(ArapSolverContext context)
         {
             if (_isUnavailable)
             {
@@ -67,7 +83,7 @@ namespace Deformation.Modifiers.Deformers.Arap
 
             try
             {
-                EnsureFactorization(constrained, neighbors, constraintVersion);
+                EnsureFactorization(context.Constrained, context.Neighbors, context.ConstraintVersion);
                 return true;
             }
             catch (InvalidOperationException)
@@ -82,39 +98,79 @@ namespace Deformation.Modifiers.Deformers.Arap
             }
         }
 
-        public void Solve(
-            Vector3[] originalPositions,
-            Vector3[] workingPositions,
-            Vector3[] constraintPositions,
-            int[][] neighbors,
-            bool[] constrained,
-            int constraintVersion,
-            int iterations,
-            bool useIdentityRotations)
+        public void Solve(ArapSolverContext context)
         {
-            if (!TryPrepare(constrained, neighbors, constraintVersion))
+            var isPrepared = TryPrepare(context);
+
+            if (!isPrepared)
             {
                 return;
             }
 
-            if (useIdentityRotations)
+            PrepareConstraints(context);
+
+            if (context.UseIdentityRotations)
             {
                 Array.Fill(_rotations, Rotation3x3.Identity);
-                SolveGlobalStep(originalPositions, workingPositions, constraintPositions, neighbors, constrained);
+                SolveGlobalStep(context);
+
                 return;
             }
 
-            for (var iteration = 0; iteration < iterations; iteration++)
+            for (var iteration = 0; iteration < context.Iterations; iteration++)
             {
-                EstimateLocalRotations(originalPositions, workingPositions, neighbors);
-                SolveGlobalStep(originalPositions, workingPositions, constraintPositions, neighbors, constrained);
+                EstimateLocalRotations(context.OriginalPositions, context.WorkingPositions, context.Neighbors);
+                SolveGlobalStep(context);
+            }
+        }
+
+        public void ApplyDeformation(Mesh mesh, ArapSolverContext context)
+        {
+            for (var index = 0; index < mesh.Vertices.Length; index++)
+            {
+                var position = context.WorkingPositions[index];
+                var normal = mesh.Vertices[index].Normal;
+                var textureCoordinates = mesh.Vertices[index].TexCoords;
+
+                mesh.Vertices[index] = new Vertex(position, normal, textureCoordinates);
+            }
+        }
+
+        #endregion
+
+        #region Private Logic
+
+        private static void PrepareConstraints(ArapSolverContext context)
+        {
+            context.OriginalPositions.CopyTo(context.WorkingPositions, 0);
+
+            foreach (var controlVertex in context.ControlVertices)
+            {
+                var newPosition = context.TransformControlPoint(context.OriginalPositions[controlVertex]);
+
+                context.ConstraintPositions[controlVertex] = newPosition;
+                context.WorkingPositions[controlVertex] = newPosition;
+            }
+
+            for (var index = 0; index < context.Constrained.Length; index++)
+            {
+                var isAnchorVertex = context.Constrained[index] && !context.ControlVertices.Contains(index);
+
+                if (isAnchorVertex)
+                {
+                    var originalPosition = context.OriginalPositions[index];
+
+                    context.ConstraintPositions[index] = originalPosition;
+                    context.WorkingPositions[index] = originalPosition;
+                }
             }
         }
 
         private void EnsureFactorization(bool[] constrained, int[][] neighbors, int constraintVersion)
         {
-            if (_factorizationVersion == constraintVersion &&
-                (_factorization is not null || _vertexIndexByUnknown.Length == 0))
+            var isUpToDate = _factorizationVersion == constraintVersion && (_factorization is not null || _vertexIndexByUnknown.Length == 0);
+
+            if (isUpToDate)
             {
                 return;
             }
@@ -125,7 +181,9 @@ namespace Deformation.Modifiers.Deformers.Arap
 
             for (var index = 0; index < vertexCount; index++)
             {
-                if (constrained[index] || neighbors[index].Length == 0)
+                var isConstrainedOrDisconnected = constrained[index] || neighbors[index].Length == 0;
+
+                if (isConstrainedOrDisconnected)
                 {
                     continue;
                 }
@@ -137,7 +195,8 @@ namespace Deformation.Modifiers.Deformers.Arap
             var unknownCount = vertexIndexByUnknown.Count;
 
             _unknownIndexByVertex = unknownIndexByVertex;
-            _vertexIndexByUnknown = [.. vertexIndexByUnknown];
+            _vertexIndexByUnknown = vertexIndexByUnknown.ToArray();
+
             EnsureBuffers(unknownCount);
 
             if (unknownCount == 0)
@@ -152,6 +211,7 @@ namespace Deformation.Modifiers.Deformers.Arap
             for (var unknownIndex = 0; unknownIndex < unknownCount; unknownIndex++)
             {
                 var index = _vertexIndexByUnknown[unknownIndex];
+
                 entries.Add((unknownIndex, unknownIndex, neighbors[index].Length));
 
                 foreach (var neighbor in neighbors[index])
@@ -166,20 +226,21 @@ namespace Deformation.Modifiers.Deformers.Arap
             }
 
             var coefficientMatrix = CompressedColumnStorage<double>.OfIndexed(unknownCount, unknownCount, entries);
+
             _factorization = SparseCholesky.Create(coefficientMatrix, ColumnOrdering.MinimumDegreeAtPlusA);
             _factorizationVersion = constraintVersion;
         }
 
         private void EnsureBuffers(int unknownCount)
         {
-            if (_rhsX.Length == unknownCount)
+            if (_rightHandSideX.Length == unknownCount)
             {
                 return;
             }
 
-            _rhsX = new double[unknownCount];
-            _rhsY = new double[unknownCount];
-            _rhsZ = new double[unknownCount];
+            _rightHandSideX = new double[unknownCount];
+            _rightHandSideY = new double[unknownCount];
+            _rightHandSideZ = new double[unknownCount];
             _solutionX = new double[unknownCount];
             _solutionY = new double[unknownCount];
             _solutionZ = new double[unknownCount];
@@ -189,7 +250,11 @@ namespace Deformation.Modifiers.Deformers.Arap
         {
             if (originalPositions.Length >= ParallelRotationVertexLimit)
             {
-                Parallel.For(0, originalPositions.Length, index => EstimateLocalRotation(index, originalPositions, workingPositions, neighbors));
+                Parallel.For(0, originalPositions.Length, index =>
+                {
+                    EstimateLocalRotation(index, originalPositions, workingPositions, neighbors);
+                });
+
                 return;
             }
 
@@ -207,15 +272,15 @@ namespace Deformation.Modifiers.Deformers.Arap
                 return;
             }
 
-            double c11 = 0d;
-            double c12 = 0d;
-            double c13 = 0d;
-            double c21 = 0d;
-            double c22 = 0d;
-            double c23 = 0d;
-            double c31 = 0d;
-            double c32 = 0d;
-            double c33 = 0d;
+            var c11 = 0d;
+            var c12 = 0d;
+            var c13 = 0d;
+            var c21 = 0d;
+            var c22 = 0d;
+            var c23 = 0d;
+            var c31 = 0d;
+            var c32 = 0d;
+            var c33 = 0d;
 
             foreach (var neighbor in neighbors[index])
             {
@@ -236,12 +301,7 @@ namespace Deformation.Modifiers.Deformers.Arap
             _rotations[index] = Rotation3x3.FromCovariance(c11, c12, c13, c21, c22, c23, c31, c32, c33);
         }
 
-        private void SolveGlobalStep(
-            Vector3[] originalPositions,
-            Vector3[] workingPositions,
-            Vector3[] constraintPositions,
-            int[][] neighbors,
-            bool[] constrained)
+        private void SolveGlobalStep(ArapSolverContext context)
         {
             var unknownCount = _vertexIndexByUnknown.Length;
 
@@ -250,30 +310,31 @@ namespace Deformation.Modifiers.Deformers.Arap
                 return;
             }
 
-            Array.Clear(_rhsX, 0, unknownCount);
-            Array.Clear(_rhsY, 0, unknownCount);
-            Array.Clear(_rhsZ, 0, unknownCount);
+            Array.Clear(_rightHandSideX, 0, unknownCount);
+            Array.Clear(_rightHandSideY, 0, unknownCount);
+            Array.Clear(_rightHandSideZ, 0, unknownCount);
 
             for (var unknownIndex = 0; unknownIndex < unknownCount; unknownIndex++)
             {
                 var index = _vertexIndexByUnknown[unknownIndex];
                 var rotation = _rotations[index];
 
-                foreach (var neighbor in neighbors[index])
+                foreach (var neighbor in context.Neighbors[index])
                 {
-                    var restEdge = originalPositions[index] - originalPositions[neighbor];
+                    var restEdge = context.OriginalPositions[index] - context.OriginalPositions[neighbor];
                     var rotatedEdge = 0.5d * (rotation.Transform(restEdge) + _rotations[neighbor].Transform(restEdge));
 
-                    _rhsX[unknownIndex] += rotatedEdge.X;
-                    _rhsY[unknownIndex] += rotatedEdge.Y;
-                    _rhsZ[unknownIndex] += rotatedEdge.Z;
+                    _rightHandSideX[unknownIndex] += rotatedEdge.X;
+                    _rightHandSideY[unknownIndex] += rotatedEdge.Y;
+                    _rightHandSideZ[unknownIndex] += rotatedEdge.Z;
 
-                    if (constrained[neighbor])
+                    if (context.Constrained[neighbor])
                     {
-                        var constraintPosition = constraintPositions[neighbor];
-                        _rhsX[unknownIndex] += constraintPosition.X;
-                        _rhsY[unknownIndex] += constraintPosition.Y;
-                        _rhsZ[unknownIndex] += constraintPosition.Z;
+                        var constraintPosition = context.ConstraintPositions[neighbor];
+
+                        _rightHandSideX[unknownIndex] += constraintPosition.X;
+                        _rightHandSideY[unknownIndex] += constraintPosition.Y;
+                        _rightHandSideZ[unknownIndex] += constraintPosition.Z;
                     }
                 }
             }
@@ -283,16 +344,18 @@ namespace Deformation.Modifiers.Deformers.Arap
                 return;
             }
 
-            _factorization.Solve(_rhsX, _solutionX);
-            _factorization.Solve(_rhsY, _solutionY);
-            _factorization.Solve(_rhsZ, _solutionZ);
+            _factorization.Solve(_rightHandSideX, _solutionX);
+            _factorization.Solve(_rightHandSideY, _solutionY);
+            _factorization.Solve(_rightHandSideZ, _solutionZ);
 
             for (var unknownIndex = 0; unknownIndex < unknownCount; unknownIndex++)
             {
-                workingPositions[_vertexIndexByUnknown[unknownIndex]] = new Vector3(
+                var newPosition = new Vector3(
                     (float)_solutionX[unknownIndex],
                     (float)_solutionY[unknownIndex],
                     (float)_solutionZ[unknownIndex]);
+
+                context.WorkingPositions[_vertexIndexByUnknown[unknownIndex]] = newPosition;
             }
         }
 
@@ -301,5 +364,7 @@ namespace Deformation.Modifiers.Deformers.Arap
             _isUnavailable = true;
             _factorization = null;
         }
+
+        #endregion
     }
 }
