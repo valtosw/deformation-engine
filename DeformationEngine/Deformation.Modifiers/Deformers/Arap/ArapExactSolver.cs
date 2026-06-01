@@ -214,14 +214,11 @@ namespace Deformation.Modifiers.Deformers.Arap
 
                 entries.Add((unknownIndex, unknownIndex, neighbors[index].Length));
 
-                foreach (var neighbor in neighbors[index])
+                foreach (var neighborUnknownIndex in neighbors[index]
+                             .Select(neighbor => unknownIndexByVertex[neighbor])
+                             .Where(neighborUnknownIndex => neighborUnknownIndex >= 0))
                 {
-                    var neighborUnknownIndex = unknownIndexByVertex[neighbor];
-
-                    if (neighborUnknownIndex >= 0)
-                    {
-                        entries.Add((unknownIndex, neighborUnknownIndex, -1d));
-                    }
+                    entries.Add((unknownIndex, neighborUnknownIndex, -1d));
                 }
             }
 
