@@ -4,11 +4,21 @@ namespace Deformation.Modifiers.Deformers.Arap
 {
     internal sealed class ArapConstraintMask
     {
+        #region Fields
+
         private bool[] _mask = [];
         private bool _isDirty = true;
         private int _version;
 
+        #endregion
+
+        #region Properties
+
         public int Version => _version;
+
+        #endregion
+
+        #region Public Logic
 
         public void Clear()
         {
@@ -27,7 +37,7 @@ namespace Deformation.Modifiers.Deformers.Arap
             int vertexCount,
             int[][] neighbors,
             IReadOnlySet<int> controlVertices,
-            IReadOnlyCollection<int> anchorVertices,
+            IReadOnlySet<int> anchorVertices,
             Vector3[] originalPositions,
             Vector3[] workingPositions,
             Vector3[] constraintPositions)
@@ -61,8 +71,13 @@ namespace Deformation.Modifiers.Deformers.Arap
 
             StabilizeUnconstrainedComponents(neighbors, originalPositions, workingPositions, constraintPositions);
             _isDirty = false;
+
             return _mask;
         }
+
+        #endregion
+
+        #region Private Logic
 
         private void StabilizeUnconstrainedComponents(
             int[][] neighbors,
@@ -111,5 +126,7 @@ namespace Deformation.Modifiers.Deformers.Arap
                 }
             }
         }
+
+        #endregion
     }
 }
