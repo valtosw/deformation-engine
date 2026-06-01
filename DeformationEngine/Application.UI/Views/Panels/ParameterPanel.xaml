@@ -53,6 +53,9 @@
                         <DataTemplate DataType="{x:Type viewModels:FfdDeformerViewModel}">
                             <panels:FfdDeformationPanel />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type viewModels:ArapDeformerViewModel}">
+                            <panels:ArapDeformationPanel />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type viewModels:LbsDeformerViewModel}">
                             <panels:LbsDeformationPanel />
                         </DataTemplate>

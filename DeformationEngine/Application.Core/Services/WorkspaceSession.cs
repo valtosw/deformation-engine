@@ -24,6 +24,7 @@ namespace Application.Core.Services
         private readonly IMeshImporterFactory _meshImporterFactory;
         private readonly ISkeletonVisualBuilder _skeletonBuilder;
         private readonly ILatticeVisualBuilder _latticeBuilder;
+        private readonly IArapSelectionVisualBuilder _arapSelectionBuilder;
 
         #endregion
 
@@ -35,6 +36,7 @@ namespace Application.Core.Services
             IMeshImporterFactory meshImporterFactory,
             ISkeletonVisualBuilder skeletonBuilder,
             ILatticeVisualBuilder latticeBuilder,
+            IArapSelectionVisualBuilder arapSelectionBuilder,
             ControllerEngine engine)
         {
             Scene = sceneDirector;
@@ -42,6 +44,7 @@ namespace Application.Core.Services
             _meshImporterFactory = meshImporterFactory;
             _skeletonBuilder = skeletonBuilder;
             _latticeBuilder = latticeBuilder;
+            _arapSelectionBuilder = arapSelectionBuilder;
 
             engine.RegisterController(new CameraKeyboardController(Scene.CameraSystem, engine));
 
@@ -58,6 +61,14 @@ namespace Application.Core.Services
                 () => CurrentMode == DeformationMode.LinearBlendSkinning,
                 () => _skeletonBuilder.BoneNodes,
                 GizmoMode.Rotate));
+
+            engine.RegisterController(new ArapSelectionController(
+                Scene.CameraSystem,
+                () => CurrentMode == DeformationMode.AsRigidAsPossible,
+                () => Scene.ActiveMeshNode,
+                Deformations.GetDeformer<ArapDeformer>,
+                () => MathF.Max(0.01f, Scene.CameraSystem.TargetSphere.Radius * 0.035f),
+                () => Scene.ActiveMeshNode?.ApplyDeformers()));
 
             engine.RegisterController(new GizmoController(Scene.GizmoSystem, Scene.CameraSystem));
             engine.RegisterController(new CameraMouseController(Scene.CameraSystem));
@@ -94,6 +105,8 @@ namespace Application.Core.Services
 
             _latticeBuilder.Clear();
             Deformations.GetDeformer<FfdDeformer>().Clear();
+            _arapSelectionBuilder.Clear();
+            Deformations.GetDeformer<ArapDeformer>().Clear();
             _skeletonBuilder.Clear(CurrentMode == DeformationMode.Basic ? Scene.ActiveMeshNode : null);
 
             var activeMeshNode = new MeshNode { Mesh = mesh };
@@ -127,6 +140,10 @@ namespace Application.Core.Services
             if (mode == DeformationMode.FreeFormDeformation && !Deformations.GetDeformer<FfdDeformer>().IsInitialized && Scene.ActiveMeshNode is not null)
             {
                 Deformations.SetupFfdLattice(Scene.ActiveMeshNode, resolutionX, resolutionY, resolutionZ, Scene.CameraSystem.TargetSphere.Radius, true);
+            }
+            else if (mode == DeformationMode.AsRigidAsPossible && !Deformations.GetDeformer<ArapDeformer>().IsInitialized && Scene.ActiveMeshNode is not null)
+            {
+                Deformations.SetupArapSelection(Scene.ActiveMeshNode, Scene.CameraSystem.TargetSphere.Radius, true);
             }
 
             Scene.ConfigureModeVisualization(CurrentMode, HasModel);

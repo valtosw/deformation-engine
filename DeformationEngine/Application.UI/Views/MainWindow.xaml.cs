@@ -68,7 +68,7 @@ namespace Application.UI.Views
         private void GlRenderingControl_OnMouseMove(object sender, MouseEventArgs mouseEventArgs)
         {
             var position = mouseEventArgs.GetPosition(GlRenderingControl);
-            ViewModel.ProcessInput(new MouseMoveEvent(new Vector2((float)position.X, (float)position.Y)));
+            ViewModel.ProcessInput(new MouseMoveEvent(new Vector2((float)position.X, (float)position.Y), IsEraseModifierPressed()));
         }
 
         private void GlRenderingControl_OnMouseDown(object sender, MouseButtonEventArgs mouseButtonEventArgs)
@@ -81,7 +81,8 @@ namespace Application.UI.Views
             ViewModel.ProcessInput(new MouseClickEvent(
                 Position: new Vector2((float)position.X, (float)position.Y),
                 Button: button,
-                InputType: InputType.Down));
+                InputType: InputType.Down,
+                IsErase: IsEraseModifierPressed()));
         }
 
         private void GlRenderingControl_OnMouseUp(object sender, MouseButtonEventArgs mouseButtonEventArgs)
@@ -97,7 +98,8 @@ namespace Application.UI.Views
             ViewModel.ProcessInput(new MouseClickEvent(
                 Position: new Vector2((float)position.X, (float)position.Y),
                 Button: button,
-                InputType: InputType.Up));
+                InputType: InputType.Up,
+                IsErase: IsEraseModifierPressed()));
         }
 
         private void GlRenderingControl_OnMouseWheel(object sender, MouseWheelEventArgs mouseWheelEventArgs)
@@ -137,6 +139,11 @@ namespace Application.UI.Views
             {
                 MessageBoxWindow.Show(this, $"Failed to load model:\n{exception.Message}", "Error", MessageBoxButton.OK);
             }
+        }
+
+        private static bool IsEraseModifierPressed()
+        {
+            return (Keyboard.Modifiers & (ModifierKeys.Shift | ModifierKeys.Alt)) != 0;
         }
 
         private void Minimize_OnClick(object sender, RoutedEventArgs eventArguments)

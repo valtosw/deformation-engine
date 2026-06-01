@@ -1,0 +1,86 @@
+<UserControl
+    x:Class="Application.UI.Views.Panels.ArapDeformationPanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="clr-namespace:Application.UI.Converters">
+    <UserControl.Resources>
+        <converters:BooleanAccentBrushConverter x:Key="BooleanAccentBrushConverter"/>
+    </UserControl.Resources>
+
+    <StackPanel>
+        <TextBlock Text="As-Rigid-As-Possible Deformation" FontWeight="Bold" Margin="0,0,0,10"/>
+
+        <GroupBox Header="Anchor Type" Margin="0,0,0,12">
+            <StackPanel Margin="6">
+                <RadioButton Content="Manually selected"
+                             IsChecked="{Binding IsManualAnchorSelected, Mode=TwoWay}"
+                             Margin="4"/>
+                <RadioButton Content="Distance"
+                             IsChecked="{Binding IsDistanceAnchorSelected, Mode=TwoWay}"
+                             Margin="4"/>
+
+                <TextBlock Text="Distance" Margin="4,10,4,0"/>
+                <Slider Minimum="0"
+                        Maximum="1"
+                        Value="{Binding AnchorDistance, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        IsEnabled="{Binding IsDistanceSliderEnabled}"
+                        TickFrequency="0.05"/>
+            </StackPanel>
+        </GroupBox>
+
+        <GroupBox Header="Algorithm Settings" Margin="0,0,0,12">
+            <Grid Margin="6">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="64"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Number of iterations" Margin="4,0,4,4"/>
+                <Slider Grid.Row="1"
+                        Grid.Column="0"
+                        Minimum="1"
+                        Maximum="50"
+                        Value="{Binding Iterations, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        TickFrequency="1"
+                        IsSnapToTickEnabled="True"
+                        LargeChange="1"/>
+                <TextBox Grid.Row="1"
+                         Grid.Column="1"
+                         Text="{Binding Iterations, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         VerticalAlignment="Center"/>
+            </Grid>
+        </GroupBox>
+
+        <StackPanel DataContext="{Binding Gizmo}" Margin="0,0,0,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="Gizmo Mode:" Margin="4,0,10,0" VerticalAlignment="Center"/>
+                <ComboBox Grid.Column="1"
+                          ItemsSource="{Binding AvailableModes}"
+                          SelectedItem="{Binding Mode, Mode=TwoWay}"/>
+            </Grid>
+        </StackPanel>
+
+        <Separator Margin="0,4,0,10" Background="{StaticResource BorderBrush}"/>
+
+        <UniformGrid Columns="1">
+            <Button Content="Control points"
+                    Click="ControlPoints_OnClick"
+                    Foreground="{Binding IsControlPointMode, Converter={StaticResource BooleanAccentBrushConverter}}"/>
+            <Button Content="Anchor points"
+                    Click="AnchorPoints_OnClick"
+                    IsEnabled="{Binding IsManualAnchorPaintEnabled}"
+                    Foreground="{Binding IsAnchorPointMode, Converter={StaticResource BooleanAccentBrushConverter}}"/>
+            <Button Content="Deform"
+                    Click="Deform_OnClick"
+                    Foreground="{Binding IsDeformMode, Converter={StaticResource BooleanAccentBrushConverter}}"/>
+        </UniformGrid>
+    </StackPanel>
+</UserControl>

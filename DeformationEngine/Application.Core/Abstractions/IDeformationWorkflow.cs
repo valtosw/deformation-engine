@@ -13,6 +13,7 @@ namespace Application.Core.Abstractions
 
         void AttachDeformers(MeshNode meshNode);
         void SetupFfdLattice(MeshNode meshNode, int resolutionX, int resolutionY, int resolutionZ, float sphereRadius, bool isVisible);
+        void SetupArapSelection(MeshNode meshNode, float sphereRadius, bool isVisible);
         void SubdivideMesh(MeshNode meshNode, int resolutionX, int resolutionY, int resolutionZ, float sphereRadius, DeformationMode currentMode);
         void BakeTransformations(MeshNode meshNode, int resolutionX, int resolutionY, int resolutionZ, float sphereRadius, DeformationMode currentMode);
         void RestoreParameters(MeshNode meshNode, DeformationMode currentMode);

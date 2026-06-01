@@ -15,6 +15,7 @@ namespace Application.Core.Services
     public sealed class DeformationWorkflow(
         IMeshBakingService meshBakingService,
         ILatticeVisualBuilder latticeBuilder,
+        IArapSelectionVisualBuilder arapSelectionBuilder,
         ISkeletonVisualBuilder skeletonBuilder,
         IEnumerable<IDeformer> deformers) : IDeformationWorkflow
     {
@@ -74,6 +75,28 @@ namespace Application.Core.Services
             meshNode.ApplyDeformers();
         }
 
+        public void SetupArapSelection(MeshNode meshNode, float sphereRadius, bool isVisible)
+        {
+            if (meshNode.Mesh is null)
+            {
+                return;
+            }
+
+            arapSelectionBuilder.Clear();
+
+            var arapDeformer = GetDeformer<ArapDeformer>();
+            arapDeformer.Initialize(meshNode.Mesh);
+
+            arapSelectionBuilder.Build(
+                meshNode,
+                arapDeformer,
+                sphereRadius,
+                isVisible,
+                meshNode.ApplyDeformers);
+
+            meshNode.ApplyDeformers();
+        }
+
         public void SubdivideMesh(MeshNode meshNode, int resolutionX, int resolutionY, int resolutionZ, float sphereRadius, DeformationMode currentMode)
         {
             if (meshNode.Mesh is null)
@@ -85,12 +108,18 @@ namespace Application.Core.Services
 
             latticeBuilder.Clear();
             GetDeformer<FfdDeformer>().Clear();
+            arapSelectionBuilder.Clear();
+            GetDeformer<ArapDeformer>().Clear();
 
             meshNode.Mesh = newMesh;
 
             if (currentMode == DeformationMode.FreeFormDeformation)
             {
                 SetupFfdLattice(meshNode, resolutionX, resolutionY, resolutionZ, sphereRadius, true);
+            }
+            else if (currentMode == DeformationMode.AsRigidAsPossible)
+            {
+                SetupArapSelection(meshNode, sphereRadius, true);
             }
         }
 
@@ -101,6 +130,7 @@ namespace Application.Core.Services
             var twistDeformer = GetDeformer<TwistDeformer>();
             var bendDeformer = GetDeformer<BendDeformer>();
             var ffdDeformer = GetDeformer<FfdDeformer>();
+            var arapDeformer = GetDeformer<ArapDeformer>();
 
             var bakedMesh = meshBakingService.BakeMesh(meshNode, twistDeformer, bendDeformer, ffdDeformer);
 
@@ -113,6 +143,8 @@ namespace Application.Core.Services
 
             latticeBuilder.Clear();
             ffdDeformer.Clear();
+            arapSelectionBuilder.Clear();
+            arapDeformer.Clear();
 
             if (meshNode.Mesh?.Skinning is { } updatedSkinning)
             {
@@ -127,6 +159,10 @@ namespace Application.Core.Services
             {
                 SetupFfdLattice(meshNode, resolutionX, resolutionY, resolutionZ, sphereRadius, true);
             }
+            else if (currentMode == DeformationMode.AsRigidAsPossible)
+            {
+                SetupArapSelection(meshNode, sphereRadius, true);
+            }
         }
 
         public void RestoreParameters(MeshNode meshNode, DeformationMode currentMode)
@@ -136,6 +172,7 @@ namespace Application.Core.Services
             meshNode.Scale = OpenTK.Mathematics.Vector3.One;
 
             var ffdDeformer = GetDeformer<FfdDeformer>();
+            var arapDeformer = GetDeformer<ArapDeformer>();
 
             if (currentMode == DeformationMode.FreeFormDeformation && ffdDeformer.IsInitialized)
             {
@@ -147,6 +184,11 @@ namespace Application.Core.Services
             {
                 skinning.Skeleton.ResetToBindPose();
                 skeletonBuilder.SyncToSkeleton();
+            }
+
+            if (currentMode == DeformationMode.AsRigidAsPossible)
+            {
+                arapDeformer.Reset();
             }
 
             meshNode.ApplyDeformers();
@@ -180,6 +222,7 @@ namespace Application.Core.Services
                 _ when currentMode == DeformationMode.Twist => Math.Abs(GetDeformer<TwistDeformer>().Angle) > MathConstants.ZeroTolerance,
                 _ when currentMode == DeformationMode.Bend => Math.Abs(GetDeformer<BendDeformer>().Angle) > MathConstants.ZeroTolerance,
                 _ when currentMode == DeformationMode.FreeFormDeformation => GetDeformer<FfdDeformer>().HasChanges,
+                _ when currentMode == DeformationMode.AsRigidAsPossible => GetDeformer<ArapDeformer>().HasChanges,
                 _ when currentMode == DeformationMode.LinearBlendSkinning => GetDeformer<LbsDeformer>().IsEnabled && HasSkeletonChanges(meshNode),
                 _ => false
             };
