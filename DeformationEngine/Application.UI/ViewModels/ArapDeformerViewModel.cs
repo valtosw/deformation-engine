@@ -21,6 +21,7 @@ namespace Application.UI.ViewModels
 
         public DeformationMode Mode => DeformationMode.AsRigidAsPossible;
         public GizmoViewModel Gizmo { get; } = gizmo;
+        public static IEnumerable<GizmoMode> AvailableGizmoModes => [GizmoMode.Translate, GizmoMode.Rotate];
 
         public bool IsManualAnchorSelected
         {
@@ -83,6 +84,7 @@ namespace Application.UI.ViewModels
 
                 _deformer.SetActionMode(value);
                 ConfigureInteractionMode();
+                session.Scene.ActiveMeshNode?.ApplyDeformers();
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(IsControlPointMode));
                 OnPropertyChanged(nameof(IsAnchorPointMode));

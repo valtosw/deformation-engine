@@ -67,12 +67,15 @@ namespace Application.UI.Views
 
         private void GlRenderingControl_OnMouseMove(object sender, MouseEventArgs mouseEventArgs)
         {
+            UpdateViewportCursor();
+
             var position = mouseEventArgs.GetPosition(GlRenderingControl);
             ViewModel.ProcessInput(new MouseMoveEvent(new Vector2((float)position.X, (float)position.Y), IsEraseModifierPressed()));
         }
 
         private void GlRenderingControl_OnMouseDown(object sender, MouseButtonEventArgs mouseButtonEventArgs)
         {
+            UpdateViewportCursor();
             GlRenderingControl.CaptureMouse();
 
             var position = mouseButtonEventArgs.GetPosition(GlRenderingControl);
@@ -87,6 +90,8 @@ namespace Application.UI.Views
 
         private void GlRenderingControl_OnMouseUp(object sender, MouseButtonEventArgs mouseButtonEventArgs)
         {
+            UpdateViewportCursor();
+
             if (GlRenderingControl.IsMouseCaptured)
             {
                 GlRenderingControl.ReleaseMouseCapture();
@@ -110,12 +115,19 @@ namespace Application.UI.Views
 
         private void Window_OnKeyDown(object sender, KeyEventArgs keyEventArgs)
         {
+            UpdateViewportCursor();
+
             var key = keyEventArgs.Key.ToEngineKey();
 
             if (key != Key.Unknown)
             {
                 ViewModel.ProcessInput(new KeyEvent(key, InputType.Down));
             }
+        }
+
+        private void Window_OnKeyUp(object sender, KeyEventArgs keyEventArgs)
+        {
+            UpdateViewportCursor();
         }
 
         private void LoadObject_OnClick(object sender, RoutedEventArgs routedEventArgs)
@@ -144,6 +156,11 @@ namespace Application.UI.Views
         private static bool IsEraseModifierPressed()
         {
             return (Keyboard.Modifiers & (ModifierKeys.Shift | ModifierKeys.Alt)) != 0;
+        }
+
+        private void UpdateViewportCursor()
+        {
+            GlRenderingControl.Cursor = ViewModel.GetViewportCursor(IsEraseModifierPressed());
         }
 
         private void Minimize_OnClick(object sender, RoutedEventArgs eventArguments)

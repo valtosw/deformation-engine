@@ -10,6 +10,13 @@ namespace Deformation.Scene.Builders
 {
     public sealed class ArapSelectionVisualBuilder(IGizmoSystem gizmoSystem) : IArapSelectionVisualBuilder
     {
+        #region Constants
+
+        private const int MaximumVisibleMarkersPerGroup = 1200;
+        private const int MaximumRealtimeMarkerRefreshCount = 1500;
+
+        #endregion
+
         #region Fields
 
         private ArapDeformer? _deformer;
@@ -74,6 +81,7 @@ namespace Deformation.Scene.Builders
             parentNode.AddChild(HandleNode);
 
             deformer.SelectionChanged += OnSelectionChanged;
+            deformer.DeformationChanged += OnDeformationChanged;
 
             Refresh();
         }
@@ -117,6 +125,7 @@ namespace Deformation.Scene.Builders
             if (_deformer is not null)
             {
                 _deformer.SelectionChanged -= OnSelectionChanged;
+                _deformer.DeformationChanged -= OnDeformationChanged;
             }
 
             _controlVisualNode?.Parent?.RemoveChild(_controlVisualNode);
@@ -144,6 +153,21 @@ namespace Deformation.Scene.Builders
             Refresh();
         }
 
+        private void OnDeformationChanged(object? sender, EventArgs eventArgs)
+        {
+            if (_deformer is null)
+            {
+                return;
+            }
+
+            HandleNode?.SetPose(_deformer.HandlePosition, _deformer.HandleRotation);
+
+            if (_deformer.ControlVertices.Count + _deformer.AnchorVertices.Count <= MaximumRealtimeMarkerRefreshCount)
+            {
+                Refresh();
+            }
+        }
+
         private Mesh BuildMarkerMesh(IEnumerable<int> vertexIndices)
         {
             if (_deformer is null)
@@ -154,9 +178,11 @@ namespace Deformation.Scene.Builders
             var vertices = new List<Vertex>();
             var indices = new List<uint>();
 
-            foreach (var vertexIndex in vertexIndices)
+            var visibleVertexIndices = vertexIndices.Take(MaximumVisibleMarkersPerGroup);
+
+            foreach (var vertexIndex in visibleVertexIndices)
             {
-                AppendOctahedron(vertices, indices, _deformer.GetOriginalPosition(vertexIndex), _markerRadius);
+                AppendOctahedron(vertices, indices, _deformer.GetCurrentPosition(vertexIndex), _markerRadius);
             }
 
             return new Mesh([.. vertices], [.. indices]);

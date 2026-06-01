@@ -2,6 +2,7 @@ using Application.Core.Abstractions;
 using Deformation.Abstractions.Enums;
 using Deformation.Interaction.Input;
 using Rendering.Abstractions;
+using System.Windows.Input;
 
 namespace Application.UI.ViewModels
 {
@@ -126,6 +127,18 @@ namespace Application.UI.ViewModels
         public void ProcessInput(IInputEvent inputEvent)
         {
             _session.Scene.ProcessInput(inputEvent);
+        }
+
+        public Cursor GetViewportCursor(bool isEraseModifierPressed)
+        {
+            if (SelectedMode == DeformationMode.AsRigidAsPossible &&
+                CurrentDeformerViewModel is ArapDeformerViewModel arapViewModel &&
+                (arapViewModel.IsControlPointMode || arapViewModel.IsAnchorPointMode))
+            {
+                return isEraseModifierPressed ? Cursors.No : Cursors.Pen;
+            }
+
+            return Cursors.Arrow;
         }
 
         public void LoadMesh(string filePath)

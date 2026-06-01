@@ -55,7 +55,7 @@
             </Grid>
         </GroupBox>
 
-        <StackPanel DataContext="{Binding Gizmo}" Margin="0,0,0,12">
+        <StackPanel Margin="0,0,0,12">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -63,8 +63,8 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="Gizmo Mode:" Margin="4,0,10,0" VerticalAlignment="Center"/>
                 <ComboBox Grid.Column="1"
-                          ItemsSource="{Binding AvailableModes}"
-                          SelectedItem="{Binding Mode, Mode=TwoWay}"/>
+                          ItemsSource="{Binding AvailableGizmoModes}"
+                          SelectedItem="{Binding Gizmo.Mode, Mode=TwoWay}"/>
             </Grid>
         </StackPanel>
 
