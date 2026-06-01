@@ -1,15 +1,28 @@
 using Deformation.Abstractions.Constants;
 using Deformation.Abstractions.Geometry;
+using Deformation.Modifiers.Abstractions;
 using OpenTK.Mathematics;
 
 namespace Deformation.Modifiers.Deformers.Arap
 {
-    internal sealed class ArapPreviewSolver
+    internal sealed class ArapPreviewSolver : IArapSolver
     {
+        #region Fields
+
         private const int PreviewGraphDepth = 48;
 
         private float[] _weights = [];
         private bool _isDirty = true;
+
+        #endregion
+
+        #region Properties
+
+        public bool IsUnavailable => false;
+
+        #endregion
+
+        #region Public Logic
 
         public void Clear()
         {
@@ -22,49 +35,58 @@ namespace Deformation.Modifiers.Deformers.Arap
             _isDirty = true;
         }
 
-        public void Solve(
-            Vector3[] originalPositions,
-            Vector3[] workingPositions,
-            int[][] neighbors,
-            bool[] constrained,
-            IReadOnlySet<int> controlVertices,
-            Func<Vector3, Vector3> transformControlPoint)
+        public bool TryPrepare(ArapSolverContext context)
         {
-            EnsureWeights(originalPositions.Length, neighbors, constrained, controlVertices);
+            return true;
+        }
 
-            for (var index = 0; index < originalPositions.Length; index++)
+        public void Solve(ArapSolverContext context)
+        {
+            EnsureWeights(context.OriginalPositions.Length, context.Neighbors, context.Constrained, context.ControlVertices);
+
+            for (var index = 0; index < context.OriginalPositions.Length; index++)
             {
                 var weight = _weights[index];
 
                 if (weight <= MathConstants.ZeroTolerance)
                 {
-                    workingPositions[index] = originalPositions[index];
+                    context.WorkingPositions[index] = context.OriginalPositions[index];
                     continue;
                 }
 
-                if (constrained[index] && !controlVertices.Contains(index))
+                if (context.Constrained[index] && !context.ControlVertices.Contains(index))
                 {
-                    workingPositions[index] = originalPositions[index];
+                    context.WorkingPositions[index] = context.OriginalPositions[index];
                     continue;
                 }
 
-                var targetPosition = transformControlPoint(originalPositions[index]);
-                workingPositions[index] = Vector3.Lerp(originalPositions[index], targetPosition, weight);
+                var targetPosition = context.TransformControlPoint(context.OriginalPositions[index]);
+                context.WorkingPositions[index] = Vector3.Lerp(context.OriginalPositions[index], targetPosition, weight);
             }
         }
 
-        public void Apply(Mesh mesh, Vector3[] workingPositions)
+        public void ApplyDeformation(Mesh mesh, ArapSolverContext context)
         {
             for (var index = 0; index < mesh.Vertices.Length; index++)
             {
-                if (_weights[index] <= MathConstants.ZeroTolerance)
+                var weight = _weights[index];
+
+                if (weight <= MathConstants.ZeroTolerance)
                 {
                     continue;
                 }
 
-                mesh.Vertices[index] = new Vertex(workingPositions[index], mesh.Vertices[index].Normal, mesh.Vertices[index].TexCoords);
+                var position = context.WorkingPositions[index];
+                var normal = mesh.Vertices[index].Normal;
+                var textureCoordinates = mesh.Vertices[index].TexCoords;
+
+                mesh.Vertices[index] = new Vertex(position, normal, textureCoordinates);
             }
         }
+
+        #endregion
+
+        #region Private Logic
 
         private void EnsureWeights(
             int vertexCount,
@@ -72,7 +94,9 @@ namespace Deformation.Modifiers.Deformers.Arap
             bool[] constrained,
             IReadOnlySet<int> controlVertices)
         {
-            if (!_isDirty && _weights.Length == vertexCount)
+            var isUpToDate = !_isDirty && _weights.Length == vertexCount;
+
+            if (isUpToDate)
             {
                 return;
             }
@@ -81,8 +105,10 @@ namespace Deformation.Modifiers.Deformers.Arap
             {
                 _weights = new float[vertexCount];
             }
-
-            Array.Clear(_weights);
+            else
+            {
+                Array.Clear(_weights);
+            }
 
             if (controlVertices.Count == 0)
             {
@@ -90,7 +116,9 @@ namespace Deformation.Modifiers.Deformers.Arap
                 return;
             }
 
-            var distances = Enumerable.Repeat(-1, vertexCount).ToArray();
+            var distances = new int[vertexCount];
+            Array.Fill(distances, -1);
+
             var queue = new Queue<int>();
 
             foreach (var controlVertex in controlVertices)
@@ -112,7 +140,9 @@ namespace Deformation.Modifiers.Deformers.Arap
 
                 foreach (var neighbor in neighbors[vertex])
                 {
-                    if (distances[neighbor] >= 0 || (constrained[neighbor] && !controlVertices.Contains(neighbor)))
+                    var isSkipConditionMet = distances[neighbor] >= 0 || (constrained[neighbor] && !controlVertices.Contains(neighbor));
+
+                    if (isSkipConditionMet)
                     {
                         continue;
                     }
@@ -130,7 +160,10 @@ namespace Deformation.Modifiers.Deformers.Arap
         {
             var normalizedDistance = Math.Clamp(distance / (float)PreviewGraphDepth, 0f, 1f);
             var smoothFalloff = normalizedDistance * normalizedDistance * (3f - 2f * normalizedDistance);
+
             return 1f - smoothFalloff;
         }
+
+        #endregion
     }
 }
