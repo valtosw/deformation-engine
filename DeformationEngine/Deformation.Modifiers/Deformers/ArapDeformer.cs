@@ -10,33 +10,20 @@ namespace Deformation.Modifiers.Deformers
 {
     public sealed class ArapDeformer : IDeformer
     {
-        #region Constants
-
-        private const int ExactSolveVertexLimit = 75000;
-        private const int ExactSolveUnknownLimit = 60000;
-
-        #endregion
-
         #region Fields
 
-        private readonly HashSet<int> _controlVertices = [];
-        private readonly HashSet<int> _manualAnchorVertices = [];
-        private readonly HashSet<int> _distanceAnchorVertices = [];
+        private readonly ArapSelection _selection = new();
+        private readonly ArapSolverCoordinator _coordinator = new();
         private readonly ArapConstraintMask _constraintMask = new();
-        private readonly ArapExactSolver _exactSolver = new();
-        private readonly ArapPreviewSolver _previewSolver = new();
 
         private Vector3[] _originalPositions = [];
         private Vector3[] _workingPositions = [];
         private Vector3[] _constraintPositions = [];
         private ArapTopology? _topology;
 
-        private Vector3 _pivot = Vector3.Zero;
         private Vector3 _handlePosition = Vector3.Zero;
         private Quaternion _handleRotation = Quaternion.Identity;
-
         private bool _isInitialized;
-        private bool _distanceAnchorsDirty = true;
 
         #endregion
 
@@ -51,24 +38,16 @@ namespace Deformation.Modifiers.Deformers
 
         public ArapAnchorType AnchorType { get; private set; } = ArapAnchorType.Manual;
         public ArapActionMode ActionMode { get; private set; } = ArapActionMode.ControlPoints;
-
         public float AnchorDistance { get; private set; } = 0.25f;
         public int Iterations { get; private set; } = 12;
 
-        public IReadOnlyCollection<int> ControlVertices => _controlVertices;
-        public IReadOnlyCollection<int> AnchorVertices
-        {
-            get
-            {
-                EnsureDistanceAnchors();
-                return AnchorType == ArapAnchorType.Distance ? _distanceAnchorVertices : _manualAnchorVertices;
-            }
-        }
+        public IReadOnlySet<int> ControlVertices => _selection.ControlVertices;
+        public IReadOnlySet<int> AnchorVertices => _selection.GetAnchorVertices(AnchorType, _originalPositions, AnchorDistance);
 
-        public Vector3 Pivot => _pivot;
+        public Vector3 Pivot => _selection.Pivot;
         public bool IsInitialized => _isInitialized;
-        public bool HasSelection => _controlVertices.Count > 0 || AnchorVertices.Count > 0;
-        public bool HasChanges => _controlVertices.Count > 0 && (_handlePosition != _pivot || _handleRotation != Quaternion.Identity);
+        public bool HasSelection => _selection.HasSelection;
+        public bool HasChanges => _selection.ControlVertices.Count > 0 && (_handlePosition != Pivot || _handleRotation != Quaternion.Identity);
         public Vector3 HandlePosition => _handlePosition;
         public Quaternion HandleRotation => _handleRotation;
         public int VertexCount => _originalPositions.Length;
@@ -84,16 +63,13 @@ namespace Deformation.Modifiers.Deformers
             _constraintPositions = new Vector3[_originalPositions.Length];
             _topology = ArapTopology.Build(originalMesh);
 
-            _controlVertices.Clear();
-            _manualAnchorVertices.Clear();
-            _distanceAnchorVertices.Clear();
-            _pivot = originalMesh.LocalBoundingBox.Center;
-            _handlePosition = _pivot;
+            _selection.Clear();
+            _selection.RecalculatePivot(_originalPositions);
+            _handlePosition = Pivot;
             _handleRotation = Quaternion.Identity;
-            _distanceAnchorsDirty = true;
+
             _constraintMask.Clear();
-            _exactSolver.Reset(_originalPositions.Length);
-            _previewSolver.Clear();
+            _coordinator.Initialize(_originalPositions.Length);
             _isInitialized = true;
 
             SelectionChanged?.Invoke(this, EventArgs.Empty);
@@ -102,21 +78,18 @@ namespace Deformation.Modifiers.Deformers
 
         public void Clear()
         {
-            _controlVertices.Clear();
-            _manualAnchorVertices.Clear();
-            _distanceAnchorVertices.Clear();
+            _selection.Clear();
             _originalPositions = [];
             _workingPositions = [];
             _constraintPositions = [];
             _topology = null;
+
             _constraintMask.Clear();
-            _exactSolver.Clear();
-            _previewSolver.Clear();
-            _pivot = Vector3.Zero;
+            _coordinator.Clear();
+
             _handlePosition = Vector3.Zero;
             _handleRotation = Quaternion.Identity;
             _isInitialized = false;
-            _distanceAnchorsDirty = true;
 
             SelectionChanged?.Invoke(this, EventArgs.Empty);
             DeformationChanged?.Invoke(this, EventArgs.Empty);
@@ -124,8 +97,13 @@ namespace Deformation.Modifiers.Deformers
 
         public void Reset()
         {
-            _handlePosition = _pivot;
+            _selection.Clear();
+            _handlePosition = Vector3.Zero;
             _handleRotation = Quaternion.Identity;
+
+            InvalidateSolvers();
+
+            SelectionChanged?.Invoke(this, EventArgs.Empty);
             DeformationChanged?.Invoke(this, EventArgs.Empty);
         }
 
@@ -137,7 +115,7 @@ namespace Deformation.Modifiers.Deformers
             }
 
             AnchorType = anchorType;
-            _distanceAnchorsDirty = true;
+            _selection.MarkDistanceAnchorsDirty();
             InvalidateSolvers();
             SelectionChanged?.Invoke(this, EventArgs.Empty);
             DeformationChanged?.Invoke(this, EventArgs.Empty);
@@ -164,7 +142,7 @@ namespace Deformation.Modifiers.Deformers
             }
 
             AnchorDistance = clampedDistance;
-            _distanceAnchorsDirty = true;
+            _selection.MarkDistanceAnchorsDirty();
             InvalidateSolvers();
             SelectionChanged?.Invoke(this, EventArgs.Empty);
             DeformationChanged?.Invoke(this, EventArgs.Empty);
@@ -190,40 +168,18 @@ namespace Deformation.Modifiers.Deformers
                 return;
             }
 
-            var changed = false;
+            var hasChanged = _selection.PaintVertices(vertexIndices, erase, ActionMode, AnchorType, _topology.WeldedVertexGroups);
 
-            foreach (var vertexIndex in ExpandWeldedVertices(vertexIndices, _topology.WeldedVertexGroups))
+            if (hasChanged)
             {
-                if (ActionMode == ArapActionMode.ControlPoints)
-                {
-                    changed |= erase ? _controlVertices.Remove(vertexIndex) : _controlVertices.Add(vertexIndex);
+                _selection.RecalculatePivot(_originalPositions);
+                _handlePosition = Pivot;
+                _handleRotation = Quaternion.Identity;
 
-                    if (!erase)
-                    {
-                        _manualAnchorVertices.Remove(vertexIndex);
-                    }
-                }
-                else if (ActionMode == ArapActionMode.AnchorPoints && AnchorType == ArapAnchorType.Manual)
-                {
-                    changed |= erase ? _manualAnchorVertices.Remove(vertexIndex) : _manualAnchorVertices.Add(vertexIndex);
-
-                    if (!erase)
-                    {
-                        _controlVertices.Remove(vertexIndex);
-                    }
-                }
+                InvalidateSolvers();
+                SelectionChanged?.Invoke(this, EventArgs.Empty);
+                DeformationChanged?.Invoke(this, EventArgs.Empty);
             }
-
-            if (!changed)
-            {
-                return;
-            }
-
-            RecalculatePivot();
-            _distanceAnchorsDirty = true;
-            InvalidateSolvers();
-            SelectionChanged?.Invoke(this, EventArgs.Empty);
-            DeformationChanged?.Invoke(this, EventArgs.Empty);
         }
 
         public IReadOnlyList<int> GetVerticesWithinBrush(Vector3 center, float radius)
@@ -249,9 +205,12 @@ namespace Deformation.Modifiers.Deformers
 
         public Vector3 GetOriginalPosition(int vertexIndex)
         {
-            return vertexIndex >= 0 && vertexIndex < _originalPositions.Length
-                ? _originalPositions[vertexIndex]
-                : Vector3.Zero;
+            if (vertexIndex >= 0 && vertexIndex < _originalPositions.Length)
+            {
+                return _originalPositions[vertexIndex];
+            }
+
+            return Vector3.Zero;
         }
 
         public Vector3 GetCurrentPosition(int vertexIndex)
@@ -261,37 +220,40 @@ namespace Deformation.Modifiers.Deformers
                 return Vector3.Zero;
             }
 
-            if (ActionMode == ArapActionMode.Deform && _controlVertices.Contains(vertexIndex))
+            if (ActionMode == ArapActionMode.Deform && ControlVertices.Contains(vertexIndex))
             {
                 return TransformControlPoint(_originalPositions[vertexIndex]);
             }
 
-            return HasChanges && vertexIndex < _workingPositions.Length
-                ? _workingPositions[vertexIndex]
-                : _originalPositions[vertexIndex];
+            if (HasChanges && vertexIndex < _workingPositions.Length)
+            {
+                return _workingPositions[vertexIndex];
+            }
+
+            return _originalPositions[vertexIndex];
         }
 
         public void BeginDeform()
         {
-            RecalculatePivot();
-            _handlePosition = _pivot;
+            _selection.RecalculatePivot(_originalPositions);
+            _handlePosition = Pivot;
             _handleRotation = Quaternion.Identity;
-            EnsureDistanceAnchors();
 
             if (_topology is null)
             {
                 return;
             }
 
-            var constrained = GetConstraintMask();
+            var context = CreateSolverContext();
+            var solver = _coordinator.SelectSolver(context);
 
-            if (ShouldUsePreviewSolve(constrained))
+            if (solver is ArapPreviewSolver)
             {
-                _previewSolver.Solve(_originalPositions, _workingPositions, _topology.Neighbors, constrained, _controlVertices, TransformControlPoint);
+                solver.Solve(context);
             }
             else
             {
-                _exactSolver.TryPrepare(constrained, _topology.Neighbors, _constraintMask.Version);
+                solver.TryPrepare(context);
             }
 
             DeformationChanged?.Invoke(this, EventArgs.Empty);
@@ -314,31 +276,42 @@ namespace Deformation.Modifiers.Deformers
             if (!_isInitialized ||
                 _topology is null ||
                 _originalPositions.Length != mesh.Vertices.Length ||
-                _controlVertices.Count == 0 ||
+                ControlVertices.Count == 0 ||
                 ActionMode != ArapActionMode.Deform ||
                 !HasChanges)
             {
                 return;
             }
 
-            EnsureDistanceAnchors();
-            var constrained = GetConstraintMask();
+            var context = CreateSolverContext();
+            var solver = _coordinator.SelectSolver(context);
 
-            if (ShouldUsePreviewSolve(constrained) || !_exactSolver.TryPrepare(constrained, _topology.Neighbors, _constraintMask.Version))
-            {
-                _previewSolver.Solve(_originalPositions, _workingPositions, _topology.Neighbors, constrained, _controlVertices, TransformControlPoint);
-                _previewSolver.Apply(mesh, _workingPositions);
-                return;
-            }
+            solver.Solve(context);
+            solver.ApplyDeformation(mesh, context);
 
-            SolveExact(constrained, _topology.Neighbors);
-            ApplyWorkingPositions(mesh);
             mesh.RecalculateNormals();
         }
 
         #endregion
 
         #region Private Logic
+
+        private ArapSolverContext CreateSolverContext()
+        {
+            return new ArapSolverContext
+            {
+                OriginalPositions = _originalPositions,
+                WorkingPositions = _workingPositions,
+                ConstraintPositions = _constraintPositions,
+                Neighbors = _topology?.Neighbors ?? [],
+                Constrained = GetConstraintMask(),
+                ConstraintVersion = _constraintMask.Version,
+                Iterations = Iterations,
+                UseIdentityRotations = IsIdentityRotation(_handleRotation),
+                ControlVertices = _selection.ControlVertices,
+                TransformControlPoint = TransformControlPoint
+            };
+        }
 
         private bool[] GetConstraintMask()
         {
@@ -350,138 +323,34 @@ namespace Deformation.Modifiers.Deformers
             return _constraintMask.Get(
                 _originalPositions.Length,
                 _topology.Neighbors,
-                _controlVertices,
+                _selection.ControlVertices,
                 AnchorVertices,
                 _originalPositions,
                 _workingPositions,
                 _constraintPositions);
         }
 
-        private void SolveExact(bool[] constrained, int[][] neighbors)
-        {
-            _originalPositions.CopyTo(_workingPositions, 0);
-
-            foreach (var controlVertex in _controlVertices)
-            {
-                _constraintPositions[controlVertex] = TransformControlPoint(_originalPositions[controlVertex]);
-                _workingPositions[controlVertex] = _constraintPositions[controlVertex];
-            }
-
-            foreach (var anchorVertex in AnchorVertices)
-            {
-                if (_controlVertices.Contains(anchorVertex))
-                {
-                    continue;
-                }
-
-                _constraintPositions[anchorVertex] = _originalPositions[anchorVertex];
-                _workingPositions[anchorVertex] = _constraintPositions[anchorVertex];
-            }
-
-            _exactSolver.Solve(
-                _originalPositions,
-                _workingPositions,
-                _constraintPositions,
-                neighbors,
-                constrained,
-                _constraintMask.Version,
-                Iterations,
-                IsIdentityRotation(_handleRotation));
-        }
-
-        private void ApplyWorkingPositions(Mesh mesh)
-        {
-            for (var index = 0; index < mesh.Vertices.Length; index++)
-            {
-                mesh.Vertices[index] = new Vertex(_workingPositions[index], mesh.Vertices[index].Normal, mesh.Vertices[index].TexCoords);
-            }
-        }
-
-        private void EnsureDistanceAnchors()
-        {
-            if (AnchorType != ArapAnchorType.Distance || !_distanceAnchorsDirty)
-            {
-                return;
-            }
-
-            ArapDistanceAnchorSelector.Select(_originalPositions, _controlVertices, _distanceAnchorVertices, AnchorDistance);
-            _distanceAnchorsDirty = false;
-        }
-
-        private IEnumerable<int> ExpandWeldedVertices(IEnumerable<int> vertexIndices, int[][] weldedVertexGroups)
-        {
-            foreach (var vertexIndex in vertexIndices)
-            {
-                if (vertexIndex < 0 || vertexIndex >= weldedVertexGroups.Length)
-                {
-                    continue;
-                }
-
-                foreach (var weldedIndex in weldedVertexGroups[vertexIndex])
-                {
-                    yield return weldedIndex;
-                }
-            }
-        }
-
-        private void RecalculatePivot()
-        {
-            if (_controlVertices.Count == 0)
-            {
-                return;
-            }
-
-            var pivot = Vector3.Zero;
-
-            foreach (var vertexIndex in _controlVertices)
-            {
-                pivot += _originalPositions[vertexIndex];
-            }
-
-            _pivot = pivot / _controlVertices.Count;
-            _handlePosition = _pivot;
-            _handleRotation = Quaternion.Identity;
-        }
-
         private Vector3 TransformControlPoint(Vector3 position)
         {
-            var offset = position - _pivot;
+            var offset = position - Pivot;
+
             return _handlePosition + Vector3.Transform(offset, _handleRotation);
-        }
-
-        private bool ShouldUsePreviewSolve(bool[] constrained)
-        {
-            if (_exactSolver.IsUnavailable || _originalPositions.Length > ExactSolveVertexLimit)
-            {
-                return true;
-            }
-
-            var unknownCount = 0;
-
-            for (var index = 0; index < constrained.Length; index++)
-            {
-                if (!constrained[index] && _topology?.Neighbors[index].Length > 0)
-                {
-                    unknownCount++;
-                }
-            }
-
-            return unknownCount > ExactSolveUnknownLimit;
         }
 
         private void InvalidateSolvers()
         {
             _constraintMask.Invalidate();
-            _exactSolver.Invalidate();
-            _previewSolver.Invalidate();
+            _coordinator.Invalidate();
         }
 
         private static bool IsIdentityRotation(Quaternion rotation)
         {
-            return MathF.Abs(rotation.X) < MathConstants.ZeroTolerance &&
-                   MathF.Abs(rotation.Y) < MathConstants.ZeroTolerance &&
-                   MathF.Abs(rotation.Z) < MathConstants.ZeroTolerance &&
-                   MathF.Abs(rotation.W - 1f) < MathConstants.ZeroTolerance;
+            var isIdentityX = MathF.Abs(rotation.X) < MathConstants.ZeroTolerance;
+            var isIdentityY = MathF.Abs(rotation.Y) < MathConstants.ZeroTolerance;
+            var isIdentityZ = MathF.Abs(rotation.Z) < MathConstants.ZeroTolerance;
+            var isIdentityW = MathF.Abs(rotation.W - 1f) < MathConstants.ZeroTolerance;
+
+            return isIdentityX && isIdentityY && isIdentityZ && isIdentityW;
         }
 
         #endregion
