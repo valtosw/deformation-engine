@@ -4,18 +4,58 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <StackPanel>
         <TextBlock Text="Free-Form Deformation" FontWeight="Bold" Margin="0,0,0,10"/>
-        <StackPanel>
-            <TextBlock Text="X Axis Resolution:" Margin="0,5,0,0"/>
-            <Slider Minimum="{Binding MinimumFfdResolution}" Maximum="{Binding MaximumFfdResolution}" Value="{Binding FfdResolutionX, Mode=TwoWay}" TickFrequency="1" IsSnapToTickEnabled="True" LargeChange="1"/>
 
-            <TextBlock Text="Y Axis Resolution:" Margin="0,5,0,0"/>
-            <Slider Minimum="{Binding MinimumFfdResolution}" Maximum="{Binding MaximumFfdResolution}" Value="{Binding FfdResolutionY, Mode=TwoWay}" TickFrequency="1" IsSnapToTickEnabled="True" LargeChange="1"/>
+        <GroupBox Header="Resolution Settings" Margin="0,0,0,12">
+            <StackPanel Margin="6">
+                <Grid Margin="0,0,0,8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="64"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="X Axis Resolution" Margin="4,0,4,4"/>
+                    <Slider Grid.Row="1" Grid.Column="0" Minimum="{Binding MinimumFfdResolution}" Maximum="{Binding MaximumFfdResolution}" Value="{Binding FfdResolutionX, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TickFrequency="1" IsSnapToTickEnabled="True" LargeChange="1"/>
+                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding FfdResolutionX, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"/>
+                </Grid>
 
-            <TextBlock Text="Z Axis Resolution:" Margin="0,5,0,0"/>
-            <Slider Minimum="{Binding MinimumFfdResolution}" Maximum="{Binding MaximumFfdResolution}" Value="{Binding FfdResolutionZ, Mode=TwoWay}" TickFrequency="1" IsSnapToTickEnabled="True" LargeChange="1"/>
-        </StackPanel>
+                <Grid Margin="0,0,0,8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="64"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Y Axis Resolution" Margin="4,0,4,4"/>
+                    <Slider Grid.Row="1" Grid.Column="0" Minimum="{Binding MinimumFfdResolution}" Maximum="{Binding MaximumFfdResolution}" Value="{Binding FfdResolutionY, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TickFrequency="1" IsSnapToTickEnabled="True" LargeChange="1"/>
+                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding FfdResolutionY, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"/>
+                </Grid>
 
-        <Button Content="Generate Lattice" Click="GenerateLattice_OnClick" Margin="0,15,0,5" Foreground="{StaticResource AccentBrush}"/>
-        <Button Content="Subdivide Mesh" Click="SubdivideMesh_OnClick" Margin="0,0,0,5"/>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="64"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Z Axis Resolution" Margin="4,0,4,4"/>
+                    <Slider Grid.Row="1" Grid.Column="0" Minimum="{Binding MinimumFfdResolution}" Maximum="{Binding MaximumFfdResolution}" Value="{Binding FfdResolutionZ, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TickFrequency="1" IsSnapToTickEnabled="True" LargeChange="1"/>
+                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding FfdResolutionZ, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"/>
+                </Grid>
+            </StackPanel>
+        </GroupBox>
+
+        <Separator Margin="0,4,0,10" Background="{StaticResource BorderBrush}"/>
+
+        <UniformGrid Columns="1">
+            <Button Content="Generate lattice" Click="GenerateLattice_OnClick" Foreground="{StaticResource AccentBrush}"/>
+            <Button Content="Subdivide mesh" Click="SubdivideMesh_OnClick"/>
+        </UniformGrid>
     </StackPanel>
 </UserControl>
