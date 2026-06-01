@@ -2,5 +2,5 @@
 
 namespace Deformation.Interaction.Input
 {
-    public readonly record struct MouseClickEvent(Vector2 Position, MouseButton Button, InputType InputType) : IInputEvent;
+    public readonly record struct MouseClickEvent(Vector2 Position, MouseButton Button, InputType InputType, bool IsErase = false) : IInputEvent;
 }

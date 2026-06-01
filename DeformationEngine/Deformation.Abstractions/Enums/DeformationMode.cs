@@ -16,6 +16,9 @@ namespace Deformation.Abstractions.Enums
         [Description("Free-Form Deformation (FFD)")]
         FreeFormDeformation,
 
+        [Description("As-Rigid-As-Possible (ARAP)")]
+        AsRigidAsPossible,
+
         [Description("Linear Blend Skinning (LBS)")]
         LinearBlendSkinning
     }

@@ -9,6 +9,7 @@
     Height="800"
     Icon="../Resources/Icons/app.ico"
     KeyDown="Window_OnKeyDown"
+    KeyUp="Window_OnKeyUp"
     Style="{StaticResource AppWindowStyle}">
     <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
         <Grid>

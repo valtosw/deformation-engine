@@ -37,6 +37,7 @@ namespace Application.Host
                 services.AddSingleton<IMeshBakingService, MeshBakingService>();
                 services.AddSingleton<ISkeletonVisualBuilder, SkeletonVisualBuilder>();
                 services.AddSingleton<ILatticeVisualBuilder, LatticeVisualBuilder>();
+                services.AddSingleton<IArapSelectionVisualBuilder, ArapSelectionVisualBuilder>();
                 services.AddSingleton<ControllerEngine>();
 
                 services.AddSingleton<IMeshImporter, ObjMeshImporter>();
@@ -48,6 +49,7 @@ namespace Application.Host
                 services.AddSingleton<IDeformer, TwistDeformer>();
                 services.AddSingleton<IDeformer, BendDeformer>();
                 services.AddSingleton<IDeformer, FfdDeformer>();
+                services.AddSingleton<IDeformer, ArapDeformer>();
                 services.AddSingleton<IDeformer, LbsDeformer>();
 
                 services.AddSingleton<ISceneDirector, SceneDirector>();
@@ -61,6 +63,7 @@ namespace Application.Host
                 services.AddTransient<IDeformationPanelViewModel, TwistDeformerViewModel>();
                 services.AddTransient<IDeformationPanelViewModel, BendDeformerViewModel>();
                 services.AddTransient<IDeformationPanelViewModel, FfdDeformerViewModel>();
+                services.AddTransient<IDeformationPanelViewModel, ArapDeformerViewModel>();
                 services.AddTransient<IDeformationPanelViewModel, LbsDeformerViewModel>();
 
                 services.AddTransient<MainViewModel>();

@@ -14,6 +14,7 @@ namespace Application.Core.Services
 
         private readonly ControllerEngine _engine;
         private readonly ILatticeVisualBuilder _latticeBuilder;
+        private readonly IArapSelectionVisualBuilder _arapSelectionBuilder;
         private readonly ISkeletonVisualBuilder _skeletonBuilder;
 
         private MeshNode? _activeMeshNode;
@@ -27,12 +28,14 @@ namespace Application.Core.Services
             ICameraSystem cameraSystem,
             IGizmoSystem gizmoSystem,
             ILatticeVisualBuilder latticeBuilder,
+            IArapSelectionVisualBuilder arapSelectionBuilder,
             ISkeletonVisualBuilder skeletonBuilder)
         {
             _engine = engine;
             CameraSystem = cameraSystem;
             GizmoSystem = gizmoSystem;
             _latticeBuilder = latticeBuilder;
+            _arapSelectionBuilder = arapSelectionBuilder;
             _skeletonBuilder = skeletonBuilder;
 
             _engine.RootNode.AddChild(GizmoSystem.GizmoNode);
@@ -90,9 +93,10 @@ namespace Application.Core.Services
 
         public void ConfigureModeVisualization(DeformationMode mode, bool hasModel)
         {
-            GizmoSystem.IsEnabled = hasModel && (mode == DeformationMode.Basic || mode == DeformationMode.FreeFormDeformation || mode == DeformationMode.LinearBlendSkinning);
+            GizmoSystem.IsEnabled = hasModel && (mode == DeformationMode.Basic || mode == DeformationMode.FreeFormDeformation || mode == DeformationMode.AsRigidAsPossible || mode == DeformationMode.LinearBlendSkinning);
 
             _latticeBuilder.SetVisibility(mode == DeformationMode.FreeFormDeformation);
+            _arapSelectionBuilder.SetVisibility(mode == DeformationMode.AsRigidAsPossible);
             _skeletonBuilder.SetVisibility(mode == DeformationMode.LinearBlendSkinning);
 
             if (!hasModel)
@@ -114,6 +118,11 @@ namespace Application.Core.Services
             {
                 GizmoSystem.Mode = GizmoMode.Rotate;
                 GizmoSystem.TargetNode = _skeletonBuilder.BoneNodes.FirstOrDefault();
+            }
+            else if (mode == DeformationMode.AsRigidAsPossible)
+            {
+                GizmoSystem.Mode = GizmoMode.Translate;
+                GizmoSystem.TargetNode = null;
             }
             else
             {

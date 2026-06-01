@@ -10,4 +10,8 @@
     <ProjectReference Include="..\Deformation.Abstractions\Deformation.Abstractions.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="CSparse" Version="4.3.0" />
+  </ItemGroup>
+
 </Project>
